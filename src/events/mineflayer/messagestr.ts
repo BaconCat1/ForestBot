@@ -212,6 +212,22 @@ export default {
 
       // Fallback for simpler chat formats (e.g., <username> message)
       if (!username) {
+        const clanMatch = rawMessage.match(/^<([^>]+)>\s*(.+)$/);
+        if (clanMatch) {
+          const inside = clanMatch[1].trim();
+          const msgContent = clanMatch[2];
+          const parts = inside.split(/\s+/);
+          const nameToken = parts[parts.length - 1];
+          const possibleUsername = parseUsername(nameToken, Bot.bot);
+          if (Bot.bot.players[possibleUsername]) {
+            username = possibleUsername;
+            uuid = Bot.bot.players[username].uuid;
+            message = msgContent.trim();
+          }
+        }
+      }
+
+      if (!username) {
         const chatDividers = ["»", ">>", ">", ":"];
         for (const divider of chatDividers) {
           // PATCH: Allow for optional space after divider (e.g., "username > message" or "username> message")

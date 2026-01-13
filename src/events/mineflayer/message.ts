@@ -37,9 +37,14 @@ function splitRightCarrotInFirstWord(words: string[]): string[] {
  * from the message and collapse spaces.
  */
 function removePlayerFromMsg(fullMsg: string, player: string): string {
-    // allow optional spaces, optional < and >, optional trailing colon
-    const pattern = new RegExp(`\\s*<?\\s*${player}\\s*>?\\s*:?\\s*`, "g");
-    return fullMsg.replace(pattern, " ").trim().replace(/\s+/g, " ");
+    // allow optional clan tag inside <>, optional trailing colon
+    const bracketPattern = new RegExp(`\\s*<\\s*[^>]*\\b${player}\\b\\s*>\\s*:?\\s*`, "g");
+    const plainPattern = new RegExp(`\\s*<?\\s*${player}\\s*>?\\s*:?\\s*`, "g");
+    return fullMsg
+        .replace(bracketPattern, " ")
+        .replace(plainPattern, " ")
+        .trim()
+        .replace(/\s+/g, " ");
 }
 
 /**
