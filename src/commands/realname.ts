@@ -4,7 +4,7 @@ import forestBotAPI from 'forestbot-api-wrapper-v2/build/wrapper.js';
 
 export default {
     commands: ['realname'],
-    description: `Use ${config.prefix}realname to see through a user's nickname.`,
+    description: `See through someones nickname! Usage: ${config.prefix}realname <username> `,
     minArgs: 1,
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: forestBotAPI) => {

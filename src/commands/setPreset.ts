@@ -3,7 +3,7 @@ import { config } from '../config.js';
 
 export default {
     commands: ['setpreset'],
-    description: ` Sets the nc preset. Usage: ${config.prefix}setPreset <preset>`,
+    description: ` Sets the namechalk preset, only on refinedvanilla. Usage: ${config.prefix}setPreset <preset> `,
     minArgs: 1,
     maxArgs: 1,
     whitelisted: false,

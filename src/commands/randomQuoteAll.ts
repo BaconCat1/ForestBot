@@ -8,7 +8,7 @@ const pickRandomServer = <T,>(servers: readonly T[]): T =>
 
 export default {
     commands: ["rqa", "randomquoteall"],
-    description: ` Retrieves a random quote from all servers. Usage: ${config.prefix}rqa <phrase>(optional)`,
+    description: ` Retrieves a random quote from all servers. Usage: ${config.prefix}rqa `,
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot, api: ForestBotAPI) => {

@@ -11,7 +11,7 @@ function toEpochMs(value: string | number): number {
 
 export default {
     commands: ['survived'],
-    description: ` Shows how long since a user's last death. Usage: ${config.prefix}survived <username>`,
+    description: ` Shows how long since a user's last death. Usage: ${config.prefix}survived <username> `,
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {

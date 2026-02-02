@@ -6,3 +6,5 @@
 config.json
 
 /src/commands/book.ts
+/json/mc_blacklist.json
+/json/mc_whitelist.json

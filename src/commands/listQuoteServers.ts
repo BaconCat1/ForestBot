@@ -34,7 +34,7 @@ const buildServerChunks = (servers: string[]): string[] => {
 
 export default {
     commands: ["lq", "listquoteservers"],
-    description: ` Lists servers with quotes. Usage: ${config.prefix}lq`,
+    description: ` Lists servers you can quote from. Usage: ${config.prefix}lq `,
     minArgs: 0,
     maxArgs: 0,
     execute: async (user, _args, bot) => {

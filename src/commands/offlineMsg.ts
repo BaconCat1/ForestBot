@@ -12,7 +12,7 @@ import { readFile, writeFile } from 'fs/promises';
 
 export default {
     commands: ["offlinemsg"],
-    description: ` Use ${config.prefix}offlinemsg <username> <text> to send a message to a user who is offline.`,
+    description: ` Store a message to be delivered when the player next comes online. ${config.prefix}offlinemsg <username> <message> `,
     minArgs: 1,
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {

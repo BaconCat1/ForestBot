@@ -17,7 +17,7 @@ function extractVictimName(entry: any): string | null {
 }
 
 export default {
-    commands: ['victims'],
+    commands: ['victims', 'murders', 'bested'],
     description: ` Shows how many unique players a user has killed. Usage: ${config.prefix}victims <username>`,
     minArgs: 0,
     maxArgs: 1,

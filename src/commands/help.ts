@@ -7,6 +7,6 @@ export default {
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot) => {
-        return bot.bot.chat(" !pt, !jd, !kd, !lastseen, !oldnames, !lastdeath !lastadvancement and many more https://forestbot.org/commands ");
+        return bot.bot.chat(" !pt, !jd, !kd, !lastseen, !oldnames, !lastdeath !lastadvancement and many more https://pastebin.com/VP3t7mJ9 ");
     }
  } as MCommand

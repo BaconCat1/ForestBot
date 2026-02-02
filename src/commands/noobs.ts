@@ -4,7 +4,7 @@ import time from "../functions/utils/time.js";
 import type Bot from "../structure/mineflayer/Bot.js";
 
 export default {
-    commands: ['noobs', 'noob', 'newest', 'newusers'],
+    commands: ['noobs', 'noob', 'newest', 'newusers', 'newbs', 'newb'],
     description: ` Retrieves the 3 newest users. Usage: ${config.prefix}noobs`,
     minArgs: 0,
     maxArgs: 1,

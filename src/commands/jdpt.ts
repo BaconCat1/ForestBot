@@ -4,7 +4,7 @@ import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
 export default {
-    commands: ['jdpt', 'ptjd'],
+    commands: ['jdpt', 'ptjd', 'joindateplaytime', 'playtimejoindate'],
     description: ` Retrieves join date and total playtime. Usage: ${config.prefix}jdpt <username>`,
     minArgs: 0,
     maxArgs: 1,

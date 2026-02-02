@@ -11,8 +11,8 @@ let mountInProgress = false;
 let lastMountAttempt = 0;
 
 export default {
-    commands: ['mount', 'ride'],
-    description: 'Mount the nearest rideable entity.',
+    commands: ['mount', 'ride', 'mush'],
+    description: 'Mount the nearest rideable entity. Usage: ${config.prefix}mount <entity>(optional)',
     minArgs: 0,
     maxArgs: 1,
     execute: async (user: string, args: any[], bot: Bot, api: typeof forestBotAPI): Promise<void> => {
