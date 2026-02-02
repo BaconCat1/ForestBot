@@ -2,11 +2,14 @@ import type Bot from '../../structure/mineflayer/Bot.js';
 import { api, Logger } from '../../index.js';
 import mcCommandHandler from '../../structure/mineflayer/utils/commandHandler.js';
 import { config } from '../../config.js';
-import parseUsername from '../../structure/mineflayer/utils/parseUsername.js';
+import { parseChatDividerMessage } from '../../structure/mineflayer/utils/chatDividerParser.js';
+import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/stripMinecraftFormatting.js';
 
 const ignoreContains = [
     "joined the game",
     "left the game",
+    "joined the server",
+    "left the server",
     "voted",
     "kicked",
     "banned",
@@ -22,6 +25,8 @@ const ignoreStartsWith = [
     "From ",
     "To "
 ];
+
+const dividerPattern = /^(.*?)\s*(?:\u00bb|>>|>)\s*(.+)$/;
 
 function splitRightCarrotInFirstWord(words: string[]): string[] {
     if (words.length === 0) return words;
@@ -61,8 +66,6 @@ function normalizeWord(word: string): string {
 function extractPlayerMessage(fullMsg: string, currentOnlinePlayers: Map<string, string>): { player: string | null, message: string } {
     const words = fullMsg.split(" ");
     const firstTwoWords = words.slice(0, 2).map(normalizeWord);
-
-    console.log("First two words:", firstTwoWords);
 
     for (const word of firstTwoWords) {
         for (const [realName, displayName] of currentOnlinePlayers) {
@@ -115,7 +118,8 @@ export default {
     run: async (args: any[], Bot: Bot) => {
         if (config.useLegacyChat) return;
 
-        let fullMsg = args[0].toString();
+        const rawMsg = args[0].toString();
+        let fullMsg = stripMinecraftFormatting(rawMsg);
         let words = fullMsg.split(" ");
         words = splitRightCarrotInFirstWord(words);
         fullMsg = words.join(" ");
@@ -139,8 +143,8 @@ export default {
         const rawFirstWord = words[0] ?? "";
         const normalizedFirstWord = normalizeWord(rawFirstWord);
 
-
-        const { player, message } = extractPlayerMessage(fullMsg, currentOnlinePlayers);
+        const dividerParsed = parseChatDividerMessage(fullMsg, Bot.bot);
+        const { player, message } = dividerParsed ?? extractPlayerMessage(fullMsg, currentOnlinePlayers);
         if (!player) return;
 
         const uuid = await api.convertUsernameToUuid(player);
@@ -167,13 +171,8 @@ export default {
             return;
         }
 
-        // --- Chat divider (>) detection: treat as chat, not death ---
-        // If the message is in the form 'username> message' or 'username > message', always treat as chat
-        let isChatDivider = false;
-        if (words.length >= 2 && (words[1] === '>' || (words[0].endsWith('>') && words[0].length > 1))) {
-            // username > message  OR  username> message
-            isChatDivider = true;
-        }
+        // --- Chat divider (> / >> / \u00bb) detection: treat as chat, not death ---
+        const isChatDivider = Boolean(dividerParsed) || dividerPattern.test(fullMsg);
 
         if (!isChatDivider && isDeathOrSystemMessage(fullMsg, rawFirstWord, normalizedFirstWord)) {
             let murderer: string | null = null;
@@ -231,7 +230,7 @@ export default {
         }
 
         // --- Regular chat message ---
-        const cleanedMessage = removePlayerFromMsg(fullMsg, player);
+        const cleanedMessage = message;
 
         await api.websocket.sendMinecraftChatMessage({
             name: player,

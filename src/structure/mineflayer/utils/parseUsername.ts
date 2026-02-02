@@ -1,35 +1,32 @@
 import type { Bot } from "mineflayer";
+import { stripMinecraftFormatting } from "./stripMinecraftFormatting.js";
 
 export default function parseUsername(name: string, bot: Bot): string {
-    let cleanedName = name.trim();
-    // If a clan/prefix is present, take the last token (usernames have no spaces)
-    if (cleanedName.includes(" ")) {
-        const parts = cleanedName.split(/\s+/);
-        cleanedName = parts[parts.length - 1];
-    }
+    const normalizeToken = (value: string): string => {
+        let token = stripMinecraftFormatting(value ?? "").trim();
+        // If a clan/prefix is present, take the last token (usernames have no spaces)
+        if (/\s/.test(token)) {
+            const parts = token.split(/\s+/);
+            token = parts[parts.length - 1] ?? "";
+        }
 
-    // remove everything except word chars, underscores, numbers
-    cleanedName = cleanedName.replace(/[^_\w\d]/g, '');
+        token = token.replace(/^<|>$/g, "").replace(/:$/, "");
+        // remove everything except word chars, underscores, numbers
+        token = token.replace(/[^_\w\d]/g, "");
+        return token;
+    };
 
-    // remove leading "<" if present
-    if (cleanedName.startsWith("<")) {
-        cleanedName = cleanedName.slice(1);
-    }
+    const cleanedName = normalizeToken(name);
 
-    // if exact match, return early
-    if (bot.players[cleanedName] && cleanedName === bot.players[cleanedName].displayName.toString()) {
+    // if exact match in player list, return early
+    if (cleanedName && bot.players[cleanedName]) {
         return cleanedName;
     }
 
     // try to resolve real username
     for (const user of Object.keys(bot.players)) {
-        let displayName = bot.players[user].displayName.toString();
-
-        // handle case where display name has rank/prefix
-        let displayNameSplit = displayName.split(" ");
-        if (displayNameSplit.length >= 2) {
-            displayName = displayNameSplit[1];
-        }
+        const displayNameRaw = bot.players[user].displayName?.toString() ?? user;
+        const displayName = normalizeToken(displayNameRaw);
 
         // strict equality check, not includes
         if (cleanedName === displayName || cleanedName === user) {

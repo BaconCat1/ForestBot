@@ -3,6 +3,7 @@ import { Logger, api } from "../../index.js";
 import type Bot from "../../structure/mineflayer/Bot.js";
 import mcCommandHandler from "../../structure/mineflayer/utils/commandHandler.js";
 import parseUsername from "../../structure/mineflayer/utils/parseUsername.js";
+import { stripMinecraftFormatting } from "../../structure/mineflayer/utils/stripMinecraftFormatting.js";
 
 const log = Logger;
 
@@ -17,7 +18,7 @@ export default {
   once: false,
   run: async (args: any[], Bot: Bot) => {
     if (!config.useLegacyChat) return; // Skip if using legacy chat handling
-    const rawMessage = args[0] as string;
+    const rawMessage = stripMinecraftFormatting(args[0] as string);
     const chatArgs = [...args];
     // console.log(rawMessage, " rawMessage args[0]")
     // console.log(chatArgs, " chatArgs args")w

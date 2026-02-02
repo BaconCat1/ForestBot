@@ -10,20 +10,23 @@ export default {
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
 
         const userToSearch = args[0] || user;
-        const uuid = await api.convertUsernameToUuid(userToSearch);
-        if (!uuid) return bot.Whisper(user, ` Could not find the users UUID you where looking for. It might not be in my database.`);
-
-        const apiUrl = `https://laby.net/api/v3/user/${uuid}/profile`
-        const response = await fetch(apiUrl);
-        if (!response.ok) return bot.bot.chat(` An error occured while trying to fetch the users name history.`);
-        const data = await response.json();
+        const profileUrl = `https://api.ashcon.app/mojang/v2/user/${encodeURIComponent(userToSearch)}`;
+        const profileResponse = await fetch(profileUrl);
+        if (profileResponse.status === 404) {
+            return bot.Whisper(user, ` Could not find the user you were looking for on the Ashcon API.`);
+        }
+        if (!profileResponse.ok) return bot.bot.chat(` An error occured while trying to look up the user.`);
+        const profile = await profileResponse.json();
+        const nameHistoryData = profile?.username_history;
+        if (!Array.isArray(nameHistoryData) || nameHistoryData.length === 0) {
+            return bot.bot.chat(` No name history was found for that user.`);
+        }
         
-        const nameHistory = data.name_history.map(entry => entry.name);
-        const inappropriateName = "1HateN1ggers";
-        const index = nameHistory.indexOf(inappropriateName);
-        if (index !== -1) nameHistory.splice(index, 1);
+        const nameHistory = nameHistoryData.map(entry => entry.username).filter(Boolean);
+        const inappropriateNames = new Set(["1HateN1ggers", "ShriviledP3ck3r"]);
+        const filteredHistory = nameHistory.filter((name) => !inappropriateNames.has(name));
     
 
-        return bot.bot.chat(` ${userToSearch} has used the following names: ${nameHistory.join(", ")}`);
+        return bot.bot.chat(` ${userToSearch} has used the following names: ${filteredHistory.join(", ")}`);
     }
 } as MCommand
