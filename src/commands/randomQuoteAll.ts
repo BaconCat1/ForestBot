@@ -3,13 +3,8 @@ import { config } from "../config.js";
 import time from "../functions/utils/time.js";
 import { QUOTE_SERVERS } from "../constants/quoteServers.js";
 
-const shuffleServers = <T,>(servers: T[]): T[] => {
-    for (let i = servers.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [servers[i], servers[j]] = [servers[j], servers[i]];
-    }
-    return servers;
-};
+const pickRandomServer = <T,>(servers: readonly T[]): T =>
+    servers[Math.floor(Math.random() * servers.length)];
 
 export default {
     commands: ["rqa", "randomquoteall"],
@@ -18,27 +13,16 @@ export default {
     maxArgs: 1,
     execute: async (user, args, bot, api: ForestBotAPI) => {
         const phrase = args[0];
-        const servers = shuffleServers([...QUOTE_SERVERS]);
-
-        let data: Awaited<ReturnType<typeof api.getQuote>> | null = null;
-        let resolvedServer = "";
-
-        for (const server of servers) {
-            const result = await api.getQuote(
-                "none",
-                server,
-                phrase ? { random: true, phrase } : { random: true }
-            );
-
-            if (result && result.message) {
-                data = result;
-                resolvedServer = server;
-                break;
-            }
-        }
+        const resolvedServer = pickRandomServer(QUOTE_SERVERS);
+        const data = await api.getQuote(
+            "none",
+            resolvedServer,
+            phrase ? { random: true, phrase } : { random: true }
+        );
 
         if (!data || !data.message) {
-            bot.Whisper(user, ` unexpected error occurred.`);
+            const phraseLabel = phrase ? ` for "${phrase}"` : "";
+            bot.Whisper(user, ` No quotes found${phraseLabel} on ${resolvedServer}.`);
             return;
         }
 
