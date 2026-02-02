@@ -9,18 +9,29 @@ export default {
     maxArgs: 255,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
         const search = args[0] ? args[0] : user;
+        const safeUsername = String(search).match(/^[A-Za-z0-9_]{1,16}$/) ? String(search) : null;
 
-        const data = await api.getWhoIs(search);
+        if (!safeUsername) {
+            bot.Whisper(user, " Invalid username. Use a valid Minecraft name.");
+            return;
+        }
+
+        const data = await api.getWhoIs(safeUsername);
 
         if (!data) {
-            if (search === user) return bot.Whisper(user, ` You have not yet set a description with !iam`)
+            if (safeUsername === user) return bot.Whisper(user, ` You have not yet set a description with !iam`)
             else {
-                return bot.Whisper(user, ` ${search} has not yet set a description with !iam`)
+                return bot.Whisper(user, ` ${safeUsername} has not yet set a description with !iam`)
             }
             
         }
 
-        bot.bot.chat(` ${search} is ${data.description}`)
+        const safeDescription = String(data.description ?? "")
+            .replace(/[\r\n]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        bot.bot.chat(`User ${safeUsername} is ${safeDescription}`)
 
         return;
     }
