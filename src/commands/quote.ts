@@ -1,7 +1,10 @@
 import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import time from "../functions/utils/time.js";
-import { QUOTE_SERVERS, QUOTE_SERVER_SET } from "../constants/quoteServers.js";
+import { QUOTE_SERVERS, QUOTE_SERVER_SET, type QuoteServer } from "../constants/quoteServers.js";
+
+const isQuoteServer = (value: string): value is QuoteServer =>
+    QUOTE_SERVER_SET.has(value as QuoteServer);
 
 export default {
     commands: ['quote', 'q'],
@@ -24,7 +27,7 @@ export default {
             return;
         }
 
-        if (hasServerArg && server !== "all" && !QUOTE_SERVER_SET.has(server)) {
+        if (hasServerArg && server !== "all" && !isQuoteServer(server)) {
             bot.Whisper(user, ` Unknown server "${server}". Use ${config.prefix}lq for the list.`);
             return;
         }

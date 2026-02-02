@@ -27,4 +27,6 @@ export const QUOTE_SERVERS = [
   "vanillasteal",
 ] as const;
 
-export const QUOTE_SERVER_SET = new Set(QUOTE_SERVERS);
+export type QuoteServer = typeof QUOTE_SERVERS[number];
+
+export const QUOTE_SERVER_SET: ReadonlySet<QuoteServer> = new Set(QUOTE_SERVERS);

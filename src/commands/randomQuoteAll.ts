@@ -3,7 +3,7 @@ import { config } from "../config.js";
 import time from "../functions/utils/time.js";
 import { QUOTE_SERVERS } from "../constants/quoteServers.js";
 
-const shuffleServers = (servers: string[]): string[] => {
+const shuffleServers = <T,>(servers: T[]): T[] => {
     for (let i = servers.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [servers[i], servers[j]] = [servers[j], servers[i]];
