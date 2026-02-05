@@ -2,6 +2,8 @@ import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
+const noUserFoundError = "No user found";
+
 export default {
     commands: ['whois'],
     description: ` Shows the description of a user. Usage: ${config.prefix}whois <username>`,
@@ -23,7 +25,7 @@ export default {
             const response = (error as { response?: { status?: number; data?: { error?: string } } }).response;
             const responseError = response?.data?.error;
 
-            if (response?.status === 400 && typeof responseError === "string" && responseError.includes("No user found")) {
+            if (response?.status === 400 && typeof responseError === "string" && responseError.includes(noUserFoundError)) {
                 bot.Whisper(user, " User not found.");
                 return;
             }
