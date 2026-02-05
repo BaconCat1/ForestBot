@@ -26,7 +26,7 @@ export default {
             const responseError = response?.data?.error;
 
             if (response?.status === 400 && typeof responseError === "string" && responseError.includes(noUserFoundError)) {
-                bot.Whisper(user, " User not found.");
+                bot.Whisper(user, "User not found.");
                 return;
             }
 
