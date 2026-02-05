@@ -2,7 +2,6 @@ import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
-const noUserFoundError = "No user found";
 type ApiError = { response?: { status?: number; data?: { error?: string } } };
 
 export default {
@@ -25,7 +24,7 @@ export default {
         } catch (error) {
             const response = (error as ApiError).response;
 
-            if (response?.status === 400 && response?.data?.error === noUserFoundError) {
+            if (response?.status === 400 && response?.data?.error === "No user found") {
                 bot.Whisper(user, "User not found.");
                 return;
             }
