@@ -16,10 +16,11 @@ export default {
             return;
         }
 
-        let data = null;
+        let data;
         try {
             data = await api.getWhoIs(safeUsername);
-        } catch {
+        } catch (error) {
+            console.warn("Failed to fetch whois data:", error);
             data = null;
         }
 
