@@ -16,20 +16,29 @@ export default {
             return;
         }
 
-        const data = await api.getWhoIs(safeUsername);
+        let data = null;
+        try {
+            data = await api.getWhoIs(safeUsername);
+        } catch {
+            data = null;
+        }
+
+        const notSetMessage = safeUsername === user
+            ? ` You have not yet set a description with !iam`
+            : ` ${safeUsername} has not yet set a description with !iam`;
 
         if (!data) {
-            if (safeUsername === user) return bot.Whisper(user, ` You have not yet set a description with !iam`)
-            else {
-                return bot.Whisper(user, ` ${safeUsername} has not yet set a description with !iam`)
-            }
-            
+            return bot.Whisper(user, notSetMessage);
         }
 
         const safeDescription = String(data.description ?? "")
             .replace(/[\r\n]+/g, " ")
             .replace(/\s+/g, " ")
             .trim();
+
+        if (!safeDescription) {
+            return bot.Whisper(user, notSetMessage);
+        }
 
         bot.bot.chat(`User ${safeUsername} is ${safeDescription}`)
 
