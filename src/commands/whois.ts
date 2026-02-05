@@ -3,6 +3,7 @@ import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
 const noUserFoundError = "No user found";
+type ApiError = { response?: { status?: number; data?: { error?: string } } };
 
 export default {
     commands: ['whois'],
@@ -22,7 +23,7 @@ export default {
         try {
             data = await api.getWhoIs(safeUsername);
         } catch (error) {
-            const response = (error as { response?: { status?: number; data?: { error?: string } } }).response;
+            const response = (error as ApiError).response;
             const responseError = response?.data?.error;
 
             if (response?.status === 400 && typeof responseError === "string" && responseError.includes(noUserFoundError)) {
