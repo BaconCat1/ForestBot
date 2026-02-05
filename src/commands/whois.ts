@@ -20,6 +20,14 @@ export default {
         try {
             data = await api.getWhoIs(safeUsername);
         } catch (error) {
+            const response = (error as { response?: { status?: number; data?: { error?: string } } }).response;
+            const responseError = response?.data?.error;
+
+            if (response?.status === 400 && typeof responseError === "string" && responseError.includes("No user found")) {
+                bot.Whisper(user, " User not found.");
+                return;
+            }
+
             console.warn(`Failed to fetch whois data for ${safeUsername}:`, error);
             data = null;
         }
