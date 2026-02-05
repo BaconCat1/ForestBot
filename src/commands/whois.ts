@@ -26,7 +26,7 @@ export default {
             const response = (error as ApiError).response;
             const responseError = response?.data?.error;
 
-            if (response?.status === 400 && typeof responseError === "string" && responseError.includes(noUserFoundError)) {
+            if (response?.status === 400 && responseError === noUserFoundError) {
                 bot.Whisper(user, "User not found.");
                 return;
             }
