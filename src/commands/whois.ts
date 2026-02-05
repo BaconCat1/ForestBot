@@ -24,9 +24,8 @@ export default {
             data = await api.getWhoIs(safeUsername);
         } catch (error) {
             const response = (error as ApiError).response;
-            const responseError = response?.data?.error;
 
-            if (response?.status === 400 && responseError === noUserFoundError) {
+            if (response?.status === 400 && response?.data?.error === noUserFoundError) {
                 bot.Whisper(user, "User not found.");
                 return;
             }
