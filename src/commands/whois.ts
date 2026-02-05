@@ -20,7 +20,7 @@ export default {
         try {
             data = await api.getWhoIs(safeUsername);
         } catch (error) {
-            console.warn("Failed to fetch whois data:", error);
+            console.warn(`Failed to fetch whois data for ${safeUsername}:`, error);
             data = null;
         }
 
