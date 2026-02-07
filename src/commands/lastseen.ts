@@ -39,6 +39,6 @@ export default {
             lastseenString = data.lastseen.toString();
         }
 
-        return bot.bot.chat(` I last seen ${search} ${lastseenString}`);
+        return bot.bot.chat(` I last saw ${search} ${lastseenString}`);
     }
 } as MCommand
