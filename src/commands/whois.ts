@@ -2,8 +2,6 @@ import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
-type ApiError = { response?: { status?: number; data?: { error?: string } } };
-
 export default {
     commands: ['whois'],
     description: ` Shows the description of a user. Usage: ${config.prefix}whois <username>`,
@@ -22,13 +20,6 @@ export default {
         try {
             data = await api.getWhoIs(safeUsername);
         } catch (error) {
-            const response = (error as ApiError).response;
-
-            if (response?.status === 400 && response?.data?.error === "No user found") {
-                bot.Whisper(user, "User not found.");
-                return;
-            }
-
             console.warn(`Failed to fetch whois data for ${safeUsername}:`, error);
             data = null;
         }
