@@ -4,6 +4,7 @@ import type Bot from "../../structure/mineflayer/Bot.js";
 import mcCommandHandler from "../../structure/mineflayer/utils/commandHandler.js";
 import parseUsername from "../../structure/mineflayer/utils/parseUsername.js";
 import { stripMinecraftFormatting } from "../../structure/mineflayer/utils/stripMinecraftFormatting.js";
+import isStandingCommand from "../../structure/mineflayer/utils/isStandingCommand.js";
 
 const log = Logger;
 
@@ -33,7 +34,7 @@ export default {
         const isForBot = recipient.toLowerCase() === Bot.bot.username.toLowerCase();
         if (isForBot && pmMessage.startsWith(config.prefix)) {
           const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
-          if (!Bot.userBlacklist.has(uuid)) {
+          if (!Bot.userBlacklist.has(uuid) || isStandingCommand(pmMessage)) {
             await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
           }
         }
@@ -79,18 +80,23 @@ export default {
 
         // Save the message if valid
         if (username && message && message !== ":" && message !== "") {
-          if (!Bot.userBlacklist.has(uuid)) {
-            log.chat(username, message, uuid);
-            await api.websocket.sendMinecraftChatMessage({
-              name: username,
-              message,
-              date: Date.now().toString(),
-              mc_server: Bot.mc_server,
-              uuid,
-            });
-            if (username !== Bot.bot.username) {
+          if (Bot.userBlacklist.has(uuid)) {
+            if (message.trim().startsWith(config.prefix) && isStandingCommand(message)) {
               await mcCommandHandler(username, message, Bot, uuid);
             }
+            return;
+          }
+
+          log.chat(username, message, uuid);
+          await api.websocket.sendMinecraftChatMessage({
+            name: username,
+            message,
+            date: Date.now().toString(),
+            mc_server: Bot.mc_server,
+            uuid,
+          });
+          if (username !== Bot.bot.username) {
+            await mcCommandHandler(username, message, Bot, uuid);
           }
         }
         return;
@@ -184,7 +190,12 @@ export default {
 
       // Handle chat messages
       const saveMessage = async (username: string, uuid: string, message: string) => {
-        if (Bot.userBlacklist.has(uuid)) return;
+        if (Bot.userBlacklist.has(uuid)) {
+          if (message.trim().startsWith(config.prefix) && isStandingCommand(message)) {
+            await mcCommandHandler(username, message, Bot, uuid);
+          }
+          return;
+        }
 
         log.chat(username, message, uuid);
 

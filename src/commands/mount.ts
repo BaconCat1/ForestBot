@@ -1,5 +1,6 @@
 import type Bot from '../structure/mineflayer/Bot.js';
 import forestBotAPI from 'forestbot-api-wrapper-v2/build/wrapper.js';
+import { config } from '../config.js';
 
 const MOUNT_GLOBAL_COOLDOWN_MS = 3000;
 const MOUNT_USER_COOLDOWN_MS = 6000;

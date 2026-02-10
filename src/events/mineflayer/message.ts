@@ -4,6 +4,7 @@ import mcCommandHandler from '../../structure/mineflayer/utils/commandHandler.js
 import { config } from '../../config.js';
 import { parseChatDividerMessage } from '../../structure/mineflayer/utils/chatDividerParser.js';
 import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/stripMinecraftFormatting.js';
+import isStandingCommand from '../../structure/mineflayer/utils/isStandingCommand.js';
 
 const ignoreContains = [
     "joined the game",
@@ -135,7 +136,7 @@ export default {
             if (!isForBot || !pmMessage.startsWith(config.prefix)) return;
 
             const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
-            if (Bot.userBlacklist.has(uuid)) return;
+            if (Bot.userBlacklist.has(uuid) && !isStandingCommand(pmMessage)) return;
 
             await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
             return;
@@ -165,7 +166,9 @@ export default {
         if (!player) return;
 
         const uuid = await api.convertUsernameToUuid(player);
-        if (Bot.userBlacklist.has(uuid)) return;
+        const parsedCommandMessage = message.trim();
+        const blacklistedTryingStanding = parsedCommandMessage.startsWith(config.prefix) && isStandingCommand(parsedCommandMessage);
+        if (Bot.userBlacklist.has(uuid) && !blacklistedTryingStanding) return;
 
         // --- Advancement messages (keep existing behavior) ---
         if (
@@ -230,7 +233,7 @@ export default {
         // --- Command handling ---
         // Only treat messages that START with the command prefix as commands.
         // This prevents bot/system text containing "!whois"/"!iam" from recursively re-triggering handlers.
-        const commandMessage = message.trim();
+        const commandMessage = parsedCommandMessage;
         if (commandMessage.startsWith(config.prefix)) {
             await mcCommandHandler(player, commandMessage, Bot, uuid);
             return;
