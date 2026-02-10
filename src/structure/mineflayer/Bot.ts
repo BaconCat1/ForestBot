@@ -41,6 +41,10 @@ export default class Bot {
         this.mc_server = config.mc_server;
         this.welcomeMsgs = config.welcome_messages;
 
+        this.userBlacklist.clear();
+        this.userWhitelist.clear();
+        this.whitelistedCmds.clear();
+
         mc_blacklist.forEach(user => this.userBlacklist.add(user));
         mc_whitelist.forEach(user => this.userWhitelist.add(user));
         config.whitelisted_commands.forEach(command => this.whitelistedCmds.add(command));

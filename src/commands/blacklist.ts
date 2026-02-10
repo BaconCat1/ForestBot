@@ -22,10 +22,10 @@ export default {
             }
             const userToAdd = args[1];
             const uuid = bot.bot.players[userToAdd]?.uuid;
-            bot.updateLists(uuid, "add", "blacklist");
+            await bot.updateLists(uuid, "add", "blacklist");
             bot.Whisper(user, ` Added ${userToAdd} to the blacklist.`);
 
-            bot.loadConfigs();
+            await bot.loadConfigs();
             break;
 
             case "remove":
@@ -34,10 +34,10 @@ export default {
             }
             const userToRemove = args[1];
             const uuidToRemove = bot.bot.players[userToRemove]?.uuid;
-            bot.updateLists(uuidToRemove, "remove", "blacklist");
+            await bot.updateLists(uuidToRemove, "remove", "blacklist");
             bot.Whisper(user, ` Removed ${userToRemove} from the blacklist.`);
 
-            bot.loadConfigs();
+            await bot.loadConfigs();
             break;
         }
 
