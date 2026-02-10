@@ -6,7 +6,7 @@ export function getGlobalQuoteCooldownRemainingMs(now: number = Date.now()): num
     return Math.max(0, QUOTE_GLOBAL_COOLDOWN_MS - (now - lastQuoteCommandAt));
 }
 
-export function tryConsumeGlobalQuoteCooldown(now: number = Date.now()): { ok: true } | { ok: false; remainingSeconds: number } {
+export function tryConsumeGlobalQuoteCooldown(now: number = Date.now()): { ok: boolean; remainingSeconds: number } {
     const remainingMs = getGlobalQuoteCooldownRemainingMs(now);
     if (remainingMs > 0) {
         return {
@@ -16,5 +16,5 @@ export function tryConsumeGlobalQuoteCooldown(now: number = Date.now()): { ok: t
     }
 
     lastQuoteCommandAt = now;
-    return { ok: true };
+    return { ok: true, remainingSeconds: 0 };
 }
