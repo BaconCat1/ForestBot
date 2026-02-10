@@ -12,6 +12,7 @@ const blacklistedWords = [
   "tempbanned", "temp-banned", "[+]", "From", "left", "Left", "joined",
   "whispers", "[EUPVP]", "[Duels]", "voted", "has requested to teleport to you.", "[Rcon]"
 ];
+const pmPattern = /\[PM\]\s+(.+?)\s+\u2192\s+(.+?)\s+\u00bb\s+(.+)$/;
 
 export default {
   name: "messagestr",
@@ -24,6 +25,21 @@ export default {
     // console.log(chatArgs, " chatArgs args")w
 
     try {
+      const pmMatch = rawMessage.match(pmPattern);
+      if (pmMatch) {
+        const sender = pmMatch[1].trim();
+        const recipient = pmMatch[2].trim();
+        const pmMessage = pmMatch[3].trim();
+        const isForBot = recipient.toLowerCase() === Bot.bot.username.toLowerCase();
+        if (isForBot && pmMessage.startsWith(config.prefix)) {
+          const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
+          if (!Bot.userBlacklist.has(uuid)) {
+            await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
+          }
+        }
+        return;
+      }
+
       // Early exit for blacklisted words
       if (rawMessage.split(/\s+/).some(word => blacklistedWords.includes(word))) {
         return;

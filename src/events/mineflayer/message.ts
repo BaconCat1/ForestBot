@@ -27,6 +27,7 @@ const ignoreStartsWith = [
 ];
 
 const dividerPattern = /^(.*?)\s*(?:\u00bb|>>|>)\s*(.+)$/;
+const pmPattern = /\[PM\]\s+(.+?)\s+\u2192\s+(.+?)\s+\u00bb\s+(.+)$/;
 
 function splitRightCarrotInFirstWord(words: string[]): string[] {
     if (words.length === 0) return words;
@@ -123,6 +124,22 @@ export default {
         let words = fullMsg.split(" ");
         words = splitRightCarrotInFirstWord(words);
         fullMsg = words.join(" ");
+
+        const pmMatch = fullMsg.match(pmPattern);
+        if (pmMatch) {
+            const sender = pmMatch[1].trim();
+            const recipient = pmMatch[2].trim();
+            const pmMessage = pmMatch[3].trim();
+            const isForBot = recipient.toLowerCase() === Bot.bot.username.toLowerCase();
+
+            if (!isForBot || !pmMessage.startsWith(config.prefix)) return;
+
+            const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
+            if (Bot.userBlacklist.has(uuid)) return;
+
+            await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
+            return;
+        }
 
         // Build realName -> displayName map
         const currentOnlinePlayers = new Map<string, string>();

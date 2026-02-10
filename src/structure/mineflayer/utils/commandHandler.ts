@@ -6,7 +6,8 @@ export default async function mcCommandHandler(
     user: string,
     message: string,
     bot: Bot,
-    uuid: string
+    uuid: string,
+    replyAsWhisper: boolean = false
 ): Promise<void> {
     if (!config.useCommands) return;
 
@@ -34,7 +35,19 @@ export default async function mcCommandHandler(
     Logger.command(user, message);
 
     try {
-        await matchedCommand.execute(user, args, bot, api);
+        if (!replyAsWhisper) {
+            await matchedCommand.execute(user, args, bot, api);
+            return;
+        }
+
+        const botForWhisperReply = Object.create(bot) as Bot;
+        const mineflayerBotForWhisperReply = Object.create(bot.bot) as typeof bot.bot;
+        mineflayerBotForWhisperReply.chat = (outgoingMessage: string) => {
+            bot.Whisper(user, outgoingMessage);
+        };
+        botForWhisperReply.bot = mineflayerBotForWhisperReply;
+
+        await matchedCommand.execute(user, args, botForWhisperReply, api);
     } catch (error) {
         Logger.warn(`Command failed (${command}) for ${user}: ${error instanceof Error ? error.message : String(error)}`);
     }

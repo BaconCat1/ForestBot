@@ -3,6 +3,9 @@ import { config } from '../config.js';
 import time from "../functions/utils/time.js";
 import { QUOTE_SERVERS, QUOTE_SERVER_SET, type QuoteServer } from "../constants/quoteServers.js";
 
+const QUOTE_COOLDOWN_MS = 10_000;
+const quoteUserCooldowns = new Map<string, number>();
+
 const isQuoteServer = (value: string): value is QuoteServer =>
     QUOTE_SERVER_SET.has(value as QuoteServer);
 
@@ -12,6 +15,16 @@ export default {
     minArgs: 0,
     maxArgs: 2,
     execute: async (user, args, bot, api: ForestBotAPI) => {
+        const now = Date.now();
+        const lastUsed = quoteUserCooldowns.get(user) ?? 0;
+        const remainingMs = QUOTE_COOLDOWN_MS - (now - lastUsed);
+        if (remainingMs > 0) {
+            const remainingSeconds = Math.ceil(remainingMs / 1000);
+            bot.Whisper(user, ` You're using ${config.prefix}q too quickly. Try again in ${remainingSeconds}s.`);
+            return;
+        }
+        quoteUserCooldowns.set(user, now);
+
         const serverArg = args[0] ? String(args[0]).toLowerCase() : "";
         const hasServerArg = args.length >= 2;
         const server = hasServerArg ? serverArg : config.mc_server;
