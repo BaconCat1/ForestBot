@@ -1,4 +1,5 @@
 import forestBotAPI from 'forestbot-api-wrapper-v2/build/wrapper.js';
+import axios from "axios";
 import { config } from '../config.js';
 import Bot from '../structure/mineflayer/Bot.js';
 
@@ -100,6 +101,28 @@ function setHistoricalCache<T>(server: string, metric: string, data: T[]): void 
     });
 }
 
+async function getTopAdvancementsFromLeaderboards(api: forestBotAPI, bot: Bot): Promise<{ username: string; advancements: number }[] | null> {
+    try {
+        const response = await axios.get(`${api.apiurl}/leaderboards`, {
+            params: { server: bot.mc_server }
+        });
+        const rows = response?.data?.advancements;
+        if (!Array.isArray(rows) || rows.length === 0) return null;
+
+        const parsed = rows
+            .map((row: any) => ({
+                username: row.player_name,
+                advancements: Number(row.advancement_count)
+            }))
+            .filter((row: { username: string; advancements: number }) => Boolean(row.username) && Number.isFinite(row.advancements))
+            .slice(0, TOP_LIMIT);
+
+        return parsed.length > 0 ? parsed : null;
+    } catch {
+        return null;
+    }
+}
+
 export default {
     commands: ['top'],
     description: ` Shows the top 5 players in a certain statistic. Usage: ${config.prefix}top <kills/deaths/joins/playtime/advancements/messages>`,
@@ -133,16 +156,15 @@ export default {
                     bot.bot.chat(` [TOP PLAYTIME]: ${stringPlaytime}`);
                     break;
                 case 'advancements':
-                    const topAdvancements = await api.getTopStatistic("advancements", bot.mc_server, TOP_LIMIT);
-                    if (topAdvancements?.top_stat?.length) {
-                        const stringAdvancements: string = topAdvancements.top_stat.map((element: any) => `${element.username}: ${element.advancements}`).join(", ");
-                        bot.bot.chat(` [TOP ADVANCEMENTS]: ${stringAdvancements}`);
+                    const leaderboardAdvancements = await getTopAdvancementsFromLeaderboards(api, bot);
+                    if (leaderboardAdvancements?.length) {
+                        bot.bot.chat(formatTopChat("TOP ADVANCEMENTS", leaderboardAdvancements, (entry) => `${entry.username}: ${entry.advancements}`));
                         break;
                     }
 
                     let historicalAdvancements = getHistoricalCache<{ username: string; advancements: number }>(bot.mc_server, "advancements");
                     if (!historicalAdvancements) {
-                        bot.Whisper(user, "Top advancements not precomputed yet. Running historical backfill now...");
+                        bot.Whisper(user, "Running historical backfill for top advancements...");
                         historicalAdvancements = await getTopAdvancementsHistorical(api, bot);
                         if (historicalAdvancements.length > 0) {
                             setHistoricalCache(bot.mc_server, "advancements", historicalAdvancements);
@@ -156,16 +178,9 @@ export default {
                     bot.bot.chat(formatTopChat("TOP ADVANCEMENTS", historicalAdvancements, (entry) => `${entry.username}: ${entry.advancements}`));
                     break;
                 case 'messages':
-                    const topMessages = await api.getTopStatistic("messages", bot.mc_server, TOP_LIMIT);
-                    if (topMessages?.top_stat?.length) {
-                        const stringMessages: string = topMessages.top_stat.map((element: any) => `${element.username}: ${element.messages}`).join(", ");
-                        bot.bot.chat(` [TOP MESSAGES]: ${stringMessages}`);
-                        break;
-                    }
-
                     let historicalMessages = getHistoricalCache<{ username: string; messages: number }>(bot.mc_server, "messages");
                     if (!historicalMessages) {
-                        bot.Whisper(user, "Top messages not precomputed yet. Running historical backfill now...");
+                        bot.Whisper(user, "Running historical backfill for top messages...");
                         historicalMessages = await getTopMessagesHistorical(api, bot);
                         if (historicalMessages.length > 0) {
                             setHistoricalCache(bot.mc_server, "messages", historicalMessages);
