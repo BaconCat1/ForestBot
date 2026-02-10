@@ -1,6 +1,7 @@
 import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import time from "../functions/utils/time.js";
+import { tryConsumeGlobalQuoteCooldown } from "./utils/quoteCooldown.js";
 
 export default {
     commands: ['rq', 'randomquote'],
@@ -8,6 +9,12 @@ export default {
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot, api: ForestBotAPI) => {
+        const cooldown = tryConsumeGlobalQuoteCooldown();
+        if (!cooldown.ok) {
+            bot.Whisper(user, ` Quote commands are on cooldown. Try again in ${cooldown.remainingSeconds}s.`);
+            return;
+        }
+
         const phrase = args[0];
         const data = await api.getQuote(
             "none",

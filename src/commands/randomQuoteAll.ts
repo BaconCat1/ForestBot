@@ -2,6 +2,7 @@ import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from "../config.js";
 import time from "../functions/utils/time.js";
 import { QUOTE_SERVERS } from "../constants/quoteServers.js";
+import { tryConsumeGlobalQuoteCooldown } from "./utils/quoteCooldown.js";
 
 const pickRandomServer = <T,>(servers: readonly T[]): T =>
     servers[Math.floor(Math.random() * servers.length)];
@@ -12,6 +13,12 @@ export default {
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot, api: ForestBotAPI) => {
+        const cooldown = tryConsumeGlobalQuoteCooldown();
+        if (!cooldown.ok) {
+            bot.Whisper(user, ` Quote commands are on cooldown. Try again in ${cooldown.remainingSeconds}s.`);
+            return;
+        }
+
         const phrase = args[0];
         const resolvedServer = pickRandomServer(QUOTE_SERVERS);
         const data = await api.getQuote(
