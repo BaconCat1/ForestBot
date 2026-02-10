@@ -32,5 +32,10 @@ export default async function mcCommandHandler(
     }
 
     Logger.command(user, message);
-    matchedCommand.execute(user, args, bot, api);
+
+    try {
+        await matchedCommand.execute(user, args, bot, api);
+    } catch (error) {
+        Logger.warn(`Command failed (${command}) for ${user}: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }

@@ -211,22 +211,12 @@ export default {
         }
 
         // --- Command handling ---
-        const commandsList = Array.from(Bot.commands.values()).flatMap(entry => entry.commands);
-
-        // figure out firstWord used for command prefix matching: use normalizedFirstWord
-        const firstWordForMatch = normalizedFirstWord;
-
-        for (const command of commandsList) {
-            const commandWithPrefix = `${config.prefix}${command}`;
-            const commandIndex = fullMsg.indexOf(commandWithPrefix);
-
-            if (commandIndex !== -1 && (fullMsg.startsWith(rawFirstWord) || fullMsg.startsWith(normalizedFirstWord))) {
-                const afterCommandText = fullMsg.slice(commandIndex + commandWithPrefix.length).trim();
-                const commandMessage = `${commandWithPrefix} ${afterCommandText}`.trim();
-                mcCommandHandler(player, commandMessage, Bot, uuid);
-                return;
-            }
-
+        // Only treat messages that START with the command prefix as commands.
+        // This prevents bot/system text containing "!whois"/"!iam" from recursively re-triggering handlers.
+        const commandMessage = message.trim();
+        if (commandMessage.startsWith(config.prefix)) {
+            await mcCommandHandler(player, commandMessage, Bot, uuid);
+            return;
         }
 
         // --- Regular chat message ---

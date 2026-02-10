@@ -12,15 +12,18 @@ export default {
         const safeUsername = String(search).match(/^[A-Za-z0-9_]{1,16}$/) ? String(search) : null;
 
         if (!safeUsername) {
-            bot.Whisper(user, " Invalid username. Use a valid Minecraft name.");
+            bot.Whisper(user, " Invalid username. Use a valid name.");
             return;
         }
 
         let data;
         try {
             data = await api.getWhoIs(safeUsername);
-        } catch (error) {
-            console.warn(`Failed to fetch whois data for ${safeUsername}:`, error);
+        } catch (error: any) {
+            const status = error?.response?.status;
+            if (status && status !== 400) {
+                console.warn(`Failed to fetch whois data for ${safeUsername} (status ${status}).`);
+            }
             data = null;
         }
 
