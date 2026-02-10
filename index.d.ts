@@ -81,7 +81,7 @@ type Config = {
     useLegacyChat: boolean
 
     useCommands: boolean;
-    commands: {};
+    commands: Record<string, boolean>;
 
     disabled_events: string[]
 

@@ -3,6 +3,7 @@ import { config } from "../../config.js";
 import antiafk from "../../structure/mineflayer/utils/antiAFK.js";
 import { Logger, api } from "../../index.js";
 import initiateViewer from "../../structure/mineflayer/utils/pViewer.js";
+import { isCommandEnabled } from "../../structure/mineflayer/utils/commandToggle.js";
 
 const getRandomInterval = () => Math.floor(Math.random() * (45 * 60 * 1000 - 15 * 60 * 1000 + 1)) + 15 * 60 * 1000;
 
@@ -89,13 +90,11 @@ export default {
 
                 const currentCommand = commandDescriptions[randomIndex];
                 const command = Array.from(Bot.commands.values()).find(cmd => cmd.description === currentCommand);
-                const cmd_name = command.commands[0];
-
                 // DO not announce whitelisted commands
                 if (command.whitelisted) return;
 
                 // Do not announce disabled commands
-                if (Object.keys(config.commands).some(k => k === cmd_name) && !config.commands[cmd_name]) return;
+                if (!isCommandEnabled(command)) return;
 
                 Bot.bot.chat(command.description);
 

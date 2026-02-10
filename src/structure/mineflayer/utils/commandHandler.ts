@@ -1,6 +1,7 @@
 import type Bot from "../Bot";
 import { config } from "../../../config.js";
 import { Logger, api } from "../../../index.js";
+import { isCommandEnabled } from "./commandToggle.js";
 
 export default async function mcCommandHandler(
     user: string,
@@ -22,8 +23,11 @@ export default async function mcCommandHandler(
 
     if (!matchedCommand) return; // No valid command found
 
-    // Check if command is disabled
-    if (config.commands.hasOwnProperty(command) && !config.commands[command]) {
+    const invokedAlias = command.toLowerCase().startsWith(commandPrefix)
+        ? command.toLowerCase().slice(commandPrefix.length)
+        : command.toLowerCase();
+    if (!isCommandEnabled(matchedCommand, invokedAlias)) {
+        bot.Whisper(user, `Sorry, ${user}, that command is disabled.`);
         return;
     }
 
