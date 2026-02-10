@@ -4,7 +4,7 @@ import mcCommandHandler from '../../structure/mineflayer/utils/commandHandler.js
 import { config } from '../../config.js';
 import { parseChatDividerMessage } from '../../structure/mineflayer/utils/chatDividerParser.js';
 import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/stripMinecraftFormatting.js';
-import isStandingCommand from '../../structure/mineflayer/utils/isStandingCommand.js';
+import { isSelfStandingCommand } from '../../structure/mineflayer/utils/isStandingCommand.js';
 
 const ignoreContains = [
     "joined the game",
@@ -136,7 +136,7 @@ export default {
             if (!isForBot || !pmMessage.startsWith(config.prefix)) return;
 
             const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
-            if (Bot.userBlacklist.has(uuid) && !isStandingCommand(pmMessage)) return;
+            if (Bot.userBlacklist.has(uuid) && !isSelfStandingCommand(pmMessage)) return;
 
             await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
             return;
@@ -167,7 +167,7 @@ export default {
 
         const uuid = await api.convertUsernameToUuid(player);
         const parsedCommandMessage = message.trim();
-        const blacklistedTryingStanding = parsedCommandMessage.startsWith(config.prefix) && isStandingCommand(parsedCommandMessage);
+        const blacklistedTryingStanding = parsedCommandMessage.startsWith(config.prefix) && isSelfStandingCommand(parsedCommandMessage);
         if (Bot.userBlacklist.has(uuid) && !blacklistedTryingStanding) return;
 
         // --- Advancement messages (keep existing behavior) ---
