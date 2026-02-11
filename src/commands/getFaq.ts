@@ -2,6 +2,7 @@
 import type { ForestBotAPI } from 'forestbot-api-wrapper-v2';
 import { config } from '../config.js';
 import Bot from '../structure/mineflayer/Bot.js';
+import { tryConsumeGlobalQuoteCooldown } from "./utils/quoteCooldown.js";
 
 export default {
     commands: ['faq', 'getfaq'],
@@ -9,6 +10,11 @@ export default {
     minArgs: 1,
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
+        const cooldown = tryConsumeGlobalQuoteCooldown();
+        if (!cooldown.ok) {
+            bot.Whisper(user, ` Quote commands are on cooldown. Try again in ${cooldown.remainingSeconds}s.`);
+            return;
+        }
 
         const id = args[0];
         
