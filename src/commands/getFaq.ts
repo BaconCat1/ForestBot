@@ -12,7 +12,7 @@ export default {
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
         const cooldown = tryConsumeGlobalQuoteCooldown();
         if (!cooldown.ok) {
-            bot.Whisper(user, ` Quote commands are on cooldown. Try again in ${cooldown.remainingSeconds}s.`);
+            bot.Whisper(user, ` This command is on cooldown. Try again in ${cooldown.remainingSeconds}s.`);
             return;
         }
 
