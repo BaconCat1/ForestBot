@@ -4,7 +4,7 @@ import type Bot from "../structure/mineflayer/Bot.js";
 
 export default {
     commands: ['drop'],
-    description: ` I will drop items in my hand, or all of my items. ${config.prefix}drop (all)(optional)`,
+    description: ` I will drop items in my hand, or all of my items. ${config.prefix}drop <all>(optional)`,
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
