@@ -1,5 +1,6 @@
 import type { ForestBotAPI } from 'forestbot-api-wrapper-v2';
 import { config } from '../config.js';
+import { censorBadWords } from '../structure/mineflayer/utils/profanityFilter.js';
 
 export default {
     commands: ['iam'],
@@ -9,11 +10,12 @@ export default {
     execute: async (user, args, bot, api: ForestBotAPI) => {
         if (!args || args.length === 0) return bot.bot.whisper(user, " View descriptions with !whois or set one with !iam");
 
-        const description = args
+        const rawDescription = args
             .join(" ")
             .replace(/[\r\n\t]+/g, " ")
             .replace(/\s+/g, " ")
             .trim();
+        const description = censorBadWords(rawDescription);
 
         if (!description) {
             return bot.Whisper(user, " Please provide a description.");
@@ -26,6 +28,9 @@ export default {
 
         try {
             await api.postWhoIsDescription(user, description);
+            if (rawDescription !== description) {
+                bot.Whisper(user, " Some words were censored before storing your description.");
+            }
             bot.Whisper(user, ` your !whois has been set.`);
             return
         } catch {

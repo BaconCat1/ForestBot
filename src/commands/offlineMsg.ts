@@ -9,6 +9,7 @@ import type { ForestBotAPI } from 'forestbot-api-wrapper-v2';
 import { config } from '../config.js';
 import Bot from '../structure/mineflayer/Bot.js';
 import { readFile, writeFile } from 'fs/promises';
+import { censorBadWords } from '../structure/mineflayer/utils/profanityFilter.js';
 
 export default {
     commands: ["offlinemsg"],
@@ -17,7 +18,8 @@ export default {
     maxArgs: 1,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
         const userToSendMessageTo = args[0];
-        const message = args.slice(1).join(" ");
+        const rawMessage = args.slice(1).join(" ");
+        const message = censorBadWords(rawMessage);
 
         try {
 
@@ -29,6 +31,10 @@ export default {
             // check if msg is over 250 characters
             if (message.length > 250) {
                 return bot.Whisper(user, ` Message is too long, must be less than 250 characters.`);
+            }
+
+            if (rawMessage !== message) {
+                bot.Whisper(user, " Some words were censored before storing your offline message.");
             }
 
             // check if user isonline first

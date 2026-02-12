@@ -65,6 +65,21 @@ export default class apiHandler extends ForestBotAPI {
             }
         })
 
+        this.on("inbound_minecraft_chat", (data: any) => {
+            if (!config.allow_chatbridge_input) return;
+            if (!data || data.relay_type !== "shout") return;
+
+            const targetServer = String(data.mc_server ?? "").toLowerCase();
+            const currentServer = String(bot.mc_server ?? "").toLowerCase();
+            const isForThisServer = targetServer === "all" || targetServer === currentServer;
+            const isOwnOrigin = String(data.origin_server ?? "").toLowerCase() === currentServer;
+
+            if (!isForThisServer || isOwnOrigin) return;
+            if (typeof data.message !== "string" || data.message.trim().length === 0) return;
+
+            bot.bot.chat(data.message);
+        })
+
     };
 
 

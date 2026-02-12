@@ -11,6 +11,7 @@ import mc from "minecraft-protocol";
 import * as fs from "fs";
 import time from "../../functions/utils/time.js";
 import { Player } from "forestbot-api-wrapper-v2";
+import { censorBadWords } from "./utils/profanityFilter.js";
 
 const { ping } = mc;
 
@@ -30,6 +31,8 @@ export default class Bot {
     public restartCount: number = 0;
     public isConnected: boolean = false;
     public allowConnection: boolean = true;
+    private originalChat?: (message: string) => void;
+    private originalWhisper?: (username: string, message: string) => void;
 
     constructor(public options: mineflayer.BotOptions) {
         this.loadConfigs()
@@ -83,6 +86,7 @@ export default class Bot {
 
         // Create the bot and assign to this.bot
         this.bot = mineflayer.createBot({ ...this.options, auth: "microsoft" });
+        this.applyOutgoingMessageFilter();
 
         // Load commands and event handlers
         this.loadCommands();
@@ -94,7 +98,8 @@ export default class Bot {
 
 
     public Whisper(user: string, message: string) {
-        this.bot.chat(`/${config.whisperCommand} ${user} ${message}`);
+        const safeMessage = censorBadWords(String(message ?? ""));
+        this.bot.chat(`/${config.whisperCommand} ${user} ${safeMessage}`);
     }
     /**
      * 
@@ -189,5 +194,23 @@ export default class Bot {
         Logger.success(`Loaded Mineflayer Events`);
     }
 
+    private applyOutgoingMessageFilter() {
+        this.originalChat = this.bot.chat.bind(this.bot);
+        this.originalWhisper = this.bot.whisper.bind(this.bot);
+
+        this.bot.chat = (message: string) => {
+            const censored = censorBadWords(String(message ?? ""));
+            const isSlashCommand = String(censored).trimStart().startsWith("/");
+            const outgoing = config.useCustomChatPrefix
+                ? (isSlashCommand ? censored : `${config.customChatPrefix} ${censored}`)
+                : censored;
+            return this.originalChat?.(outgoing);
+        };
+
+        this.bot.whisper = (username: string, message: string) => {
+            const censored = censorBadWords(String(message ?? ""));
+            return this.originalWhisper?.(username, censored);
+        };
+    }
 
 }

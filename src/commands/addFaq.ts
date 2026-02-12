@@ -1,6 +1,7 @@
 import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
+import { censorBadWords } from "../structure/mineflayer/utils/profanityFilter.js";
 
 export default {
     commands: ['addfaq'],
@@ -15,7 +16,9 @@ export default {
 
         if (!args || args.length === 0) return bot.bot.whisper(user, "Add a FAQ with !addfaq <text>");
         try {
-            const data = await api.postNewFaq(user, args.join(" "), uuid, bot.mc_server);
+            const rawFaq = args.join(" ");
+            const sanitizedFaq = censorBadWords(rawFaq);
+            const data = await api.postNewFaq(user, sanitizedFaq, uuid, bot.mc_server);
 
             if (!data) {
                 bot.Whisper(user, " An error occurred while adding your FAQ.");
@@ -27,6 +30,9 @@ export default {
                 return;
             }
 
+            if (rawFaq !== sanitizedFaq) {
+                bot.Whisper(user, " Some words were censored before storing your FAQ.");
+            }
             bot.Whisper(user, ` Your FAQ has been added. Your entry ID is ${data.id}.`);
             return
 
