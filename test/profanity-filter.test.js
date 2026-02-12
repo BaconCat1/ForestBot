@@ -37,3 +37,26 @@ test("censors leetspeak and symbol substitutions", () => {
   assert.equal(censorBadWords("sh!t b!tch"), "s*!* b!***");
   assert.equal(hasBadWords("b!tch"), true);
 });
+
+test("censors split-by-space bypasses", () => {
+  assert.equal(censorBadWords("as shole"), "a* *****");
+  assert.equal(censorBadWords("f uck"), "f ***");
+  assert.equal(censorBadWords("f u c k"), "f * * *");
+  assert.equal(hasBadWords("as shole"), true);
+  assert.equal(hasBadWords("f uck"), true);
+});
+
+test("censors close misspellings of severe slurs", () => {
+  assert.equal(censorBadWords("niggr"), "n****");
+  assert.equal(hasBadWords("niggr"), true);
+  assert.equal(censorBadWords("NlGGER"), "N*****");
+  assert.equal(censorBadWords("N1GGER"), "N*****");
+  assert.equal(censorBadWords("N5GGER"), "N*****");
+  assert.equal(censorBadWords("N3GGER"), "N*****");
+  assert.equal(censorBadWords("N0GGER"), "N*****");
+  assert.equal(hasBadWords("NlGGER"), true);
+  assert.equal(hasBadWords("N1GGER"), true);
+  assert.equal(hasBadWords("N5GGER"), true);
+  assert.equal(hasBadWords("N3GGER"), true);
+  assert.equal(hasBadWords("N0GGER"), true);
+});
