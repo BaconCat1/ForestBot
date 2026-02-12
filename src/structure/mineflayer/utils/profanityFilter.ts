@@ -313,24 +313,33 @@ function isLikelySevereVariant(lowerToken: string): boolean {
     return false;
 }
 
+const MIN_CONCATENATED_LENGTH = 8;
+
 function hasConcatenatedBadWords(normalized: string): boolean {
-    if (normalized.length < 8) return false;
+    if (normalized.length < MIN_CONCATENATED_LENGTH) return false;
     
     const commonBadWords = ["fuck", "shit", "bitch", "cunt", "whore", "damn", "pussy"];
-    let foundCount = 0;
-    let lastIndex = -1;
+    const matches: Array<{word: string; start: number; end: number}> = [];
     
     for (const word of commonBadWords) {
-        const idx = normalized.indexOf(word);
-        if (idx !== -1) {
-            if (lastIndex === -1 || idx >= lastIndex) {
-                foundCount++;
-                lastIndex = idx + word.length;
+        let searchStart = 0;
+        while (searchStart < normalized.length) {
+            const idx = normalized.indexOf(word, searchStart);
+            if (idx === -1) break;
+            
+            const overlapsExisting = matches.some(
+                m => (idx >= m.start && idx < m.end) || (idx + word.length > m.start && idx + word.length <= m.end)
+            );
+            
+            if (!overlapsExisting) {
+                matches.push({word, start: idx, end: idx + word.length});
             }
+            
+            searchStart = idx + 1;
         }
     }
     
-    return foundCount >= 2;
+    return matches.length >= 2;
 }
 
 function segmentHasBadWord(segment: string): boolean {
