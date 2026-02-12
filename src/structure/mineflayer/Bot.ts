@@ -196,7 +196,10 @@ export default class Bot {
 
     private applyOutgoingMessageFilter() {
         this.originalChat = this.bot.chat.bind(this.bot);
-        this.originalWhisper = this.bot.whisper.bind(this.bot);
+        const whisperFn = (this.bot as any).whisper;
+        if (typeof whisperFn === "function") {
+            this.originalWhisper = whisperFn.bind(this.bot);
+        }
 
         this.bot.chat = (message: string) => {
             const censored = censorBadWords(String(message ?? ""));
@@ -207,10 +210,12 @@ export default class Bot {
             return this.originalChat?.(outgoing);
         };
 
-        this.bot.whisper = (username: string, message: string) => {
-            const censored = censorBadWords(String(message ?? ""));
-            return this.originalWhisper?.(username, censored);
-        };
+        if (typeof (this.bot as any).whisper === "function") {
+            (this.bot as any).whisper = (username: string, message: string) => {
+                const censored = censorBadWords(String(message ?? ""));
+                return this.originalWhisper?.(username, censored);
+            };
+        }
     }
 
 }
