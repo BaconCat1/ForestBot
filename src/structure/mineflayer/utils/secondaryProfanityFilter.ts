@@ -4,8 +4,6 @@ import { Profanity, CensorType } from "@2toad/profanity";
 const strictProfanity = new Profanity({
     languages: ["en"],
     wholeWord: true, // Use whole word matching to avoid false positives
-    grawlix: "****",
-    grawlixChar: "*",
 });
 
 /**
@@ -15,7 +13,8 @@ const strictProfanity = new Profanity({
  * @returns Filtered text with profanity censored
  */
 export function applySecondaryFilter(text: string): string {
-    if (typeof text !== "string" || text.length === 0) return text;
+    if (typeof text !== "string") return "";
+    if (text.length === 0) return text;
     return strictProfanity.censor(text, CensorType.Word);
 }
 

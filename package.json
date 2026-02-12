@@ -1,4 +1,7 @@
 {
+  "name": "forestbot",
+  "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "@2toad/profanity": "^3.2.0"
   }
