@@ -34,6 +34,8 @@ export default class Bot {
     private originalChat?: (message: string) => void;
     private originalWhisper?: (username: string, message: string) => void;
     private outgoingFilterApplied: boolean = false;
+    private outgoingFilterWarned: boolean = false;
+    private outgoingFilterRetryInterval?: NodeJS.Timeout;
 
     constructor(public options: mineflayer.BotOptions) {
         this.loadConfigs()
@@ -64,6 +66,13 @@ export default class Bot {
      */
     public async startBot() {
         if (!this.allowConnection) return;
+
+        this.outgoingFilterApplied = false;
+        this.outgoingFilterWarned = false;
+        if (this.outgoingFilterRetryInterval) {
+            clearInterval(this.outgoingFilterRetryInterval);
+            this.outgoingFilterRetryInterval = undefined;
+        }
 
         this.restartCount++;
         Logger.login("Attempting to start Mineflayer bot");
@@ -201,7 +210,11 @@ export default class Bot {
 
         const chatFn = (this.bot as any).chat;
         if (typeof chatFn !== "function") {
-            Logger.warn("Outgoing message filter not applied: bot.chat is unavailable on this mineflayer instance.");
+            if (!this.outgoingFilterWarned) {
+                Logger.warn("Outgoing message filter delayed: bot.chat is unavailable, retrying until ready.");
+                this.outgoingFilterWarned = true;
+            }
+            this.ensureOutgoingFilterRetry();
             return;
         }
         this.originalChat = chatFn.bind(this.bot);
@@ -227,6 +240,27 @@ export default class Bot {
         }
 
         this.outgoingFilterApplied = true;
+        this.outgoingFilterWarned = false;
+        if (this.outgoingFilterRetryInterval) {
+            clearInterval(this.outgoingFilterRetryInterval);
+            this.outgoingFilterRetryInterval = undefined;
+        }
+        Logger.success("Outgoing message filter applied.");
+    }
+
+    private ensureOutgoingFilterRetry() {
+        if (this.outgoingFilterRetryInterval || this.outgoingFilterApplied) return;
+
+        this.outgoingFilterRetryInterval = setInterval(() => {
+            if (this.outgoingFilterApplied) {
+                if (this.outgoingFilterRetryInterval) {
+                    clearInterval(this.outgoingFilterRetryInterval);
+                    this.outgoingFilterRetryInterval = undefined;
+                }
+                return;
+            }
+            this.applyOutgoingMessageFilter();
+        }, 500);
     }
 
 }
