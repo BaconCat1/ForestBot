@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { writeFile } from "fs/promises";
 
-const BAD_WORDS_FILE_PATH = "./json/bad_words.json";
+const BAD_WORDS_FILE_URL = new URL("../../../../json/bad_words.json", import.meta.url);
 
 const EXPLICIT_SHORT_BAD_WORDS = new Set([
     "fk",
@@ -87,7 +87,7 @@ function normalizeWordForStorage(word: string): string {
 }
 
 function persistBadWordsFile(words: string[]): Promise<void> {
-    return writeFile(BAD_WORDS_FILE_PATH, JSON.stringify({ words }, null, 2));
+    return writeFile(BAD_WORDS_FILE_URL, JSON.stringify({ words }, null, 2));
 }
 
 function rebuildLookup(words: string[]): void {
@@ -104,7 +104,7 @@ function rebuildLookup(words: string[]): void {
 
 function loadBadWordsFromDisk(): void {
     try {
-        const raw = readFileSync(BAD_WORDS_FILE_PATH, "utf8");
+        const raw = readFileSync(BAD_WORDS_FILE_URL, "utf8");
         const parsed = JSON.parse(raw) as { words?: unknown };
         const words = Array.isArray(parsed.words) ? parsed.words.filter((w): w is string => typeof w === "string") : [];
         rebuildLookup(words);
