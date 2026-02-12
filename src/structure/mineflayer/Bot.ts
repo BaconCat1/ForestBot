@@ -195,7 +195,12 @@ export default class Bot {
     }
 
     private applyOutgoingMessageFilter() {
-        this.originalChat = this.bot.chat.bind(this.bot);
+        const chatFn = (this.bot as any).chat;
+        if (typeof chatFn !== "function") {
+            Logger.warn("Outgoing message filter not applied: bot.chat is unavailable on this mineflayer instance.");
+            return;
+        }
+        this.originalChat = chatFn.bind(this.bot);
         const whisperFn = (this.bot as any).whisper;
         if (typeof whisperFn === "function") {
             this.originalWhisper = whisperFn.bind(this.bot);
