@@ -72,6 +72,15 @@ const LEET_CHAR_MAP: Record<string, string> = {
 let normalizedBadWords: string[] = [];
 let BAD_WORD_SET = new Set<string>();
 let BAD_WORD_FIRST_CHARS = new Set<string>();
+const SEVERE_SUBSTRING_ROOTS = [...new Set([
+    ...SEVERE_BASE_WORDS,
+    "asshole",
+    "shit",
+    "slut",
+    "kike",
+    "spic",
+    "chink",
+])];
 
 function normalizeWordForStorage(word: string): string {
     return String(word ?? "").trim().toLowerCase();
@@ -227,7 +236,19 @@ function isLikelySevereVariant(lowerToken: string): boolean {
 
 function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
-    return isBadWordToken(normalized) || isLikelySevereVariant(normalized);
+    if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
+
+    const usernameCandidate = segment.replace(/^[^A-Za-z0-9_]+|[^A-Za-z0-9_]+$/g, "");
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(usernameCandidate)) return false;
+
+    const normalizedCandidate = normalizeObfuscatedSegment(usernameCandidate);
+    if (normalizedCandidate.length < 4) return false;
+
+    for (const severe of SEVERE_SUBSTRING_ROOTS) {
+        if (normalizedCandidate.includes(severe)) return true;
+    }
+
+    return false;
 }
 
 type TextSegment = {

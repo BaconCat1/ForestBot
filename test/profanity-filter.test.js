@@ -60,3 +60,20 @@ test("censors close misspellings of severe slurs", () => {
   assert.equal(hasBadWords("N3GGER"), true);
   assert.equal(hasBadWords("N0GGER"), true);
 });
+
+test("censors username tokens that embed bad words", () => {
+  assert.equal(censorBadWords("Player xxN1GGERxx joined"), "Player x********* joined");
+  assert.equal(censorBadWords("User as_shole_123"), "User a*_*****_***");
+  assert.equal(hasBadWords("xxN1GGERxx"), true);
+  assert.equal(hasBadWords("as_shole_123"), true);
+});
+
+test("censors concatenated severe words in one token", () => {
+  assert.equal(censorBadWords("iamaniggerbitch"), "i**************");
+  assert.equal(hasBadWords("iamaniggerbitch"), true);
+});
+
+test("does not over-censor benign long words", () => {
+  assert.equal(censorBadWords("assessment"), "assessment");
+  assert.equal(hasBadWords("assessment"), false);
+});

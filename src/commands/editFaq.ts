@@ -1,7 +1,6 @@
 import type { ForestBotAPI } from "forestbot-api-wrapper-v2";
 import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
-import { censorBadWords } from "../structure/mineflayer/utils/profanityFilter.js";
 
 export default {
     commands: ['editfaq'],
@@ -12,7 +11,7 @@ export default {
 
         const id = args[0];
         const rawFaqText = args.slice(1).join(" ");
-        const newFaqText = censorBadWords(rawFaqText);
+        const newFaqText = rawFaqText;
 
         if (!id || isNaN(Number(id))) {
             bot.bot.whisper(user, "Please provide a valid FAQ ID. Usage: !editfaq <id> <new text>");
@@ -46,9 +45,6 @@ export default {
                 return;
             }
 
-            if (rawFaqText !== newFaqText) {
-                bot.bot.whisper(user, "Some words were censored before storing your FAQ.");
-            }
             bot.bot.whisper(user, `Your FAQ has been successfully updated. ID: ${id}.`);
 
         } catch (err) {
