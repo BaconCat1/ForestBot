@@ -1,7 +1,9 @@
 import { readFileSync } from "fs";
 import { writeFile } from "fs/promises";
+import { fileURLToPath } from "url";
 
 const BAD_WORDS_FILE_URL = new URL("../../../../json/bad_words.json", import.meta.url);
+const BAD_WORDS_FILE_PATH = fileURLToPath(BAD_WORDS_FILE_URL);
 
 const EXPLICIT_SHORT_BAD_WORDS = new Set([
     "fk",
@@ -73,14 +75,19 @@ let normalizedBadWords: string[] = [];
 let BAD_WORD_SET = new Set<string>();
 let BAD_WORD_FIRST_CHARS = new Set<string>();
 const SEVERE_SUBSTRING_ROOTS = [...new Set([
-    ...SEVERE_BASE_WORDS,
-    "asshole",
-    "shit",
-    "slut",
+    "nigger",
+    "nigga",
+    "faggot",
     "kike",
     "spic",
     "chink",
+    "asshole",
 ])];
+const FALLBACK_BAD_WORDS = [...new Set([...SEVERE_BASE_WORDS, ...SEVERE_SUBSTRING_ROOTS])];
+
+function warnFilterConfig(message: string): void {
+    console.warn(`[warn] - Profanity filter: ${message}`);
+}
 
 function normalizeWordForStorage(word: string): string {
     return String(word ?? "").trim().toLowerCase();
@@ -105,11 +112,30 @@ function rebuildLookup(words: string[]): void {
 function loadBadWordsFromDisk(): void {
     try {
         const raw = readFileSync(BAD_WORDS_FILE_URL, "utf8");
-        const parsed = JSON.parse(raw) as { words?: unknown };
+        const parsed = JSON.parse(raw) as { words?: unknown } | unknown;
+
+        if (!parsed || typeof parsed !== "object" || !("words" in parsed)) {
+            warnFilterConfig(`"${BAD_WORDS_FILE_PATH}" is missing the "words" field. Using fallback list.`);
+            rebuildLookup(FALLBACK_BAD_WORDS);
+            return;
+        }
+
         const words = Array.isArray(parsed.words) ? parsed.words.filter((w): w is string => typeof w === "string") : [];
+        if (!Array.isArray(parsed.words)) {
+            warnFilterConfig(`"${BAD_WORDS_FILE_PATH}" has invalid "words" format. Using fallback list.`);
+            rebuildLookup(FALLBACK_BAD_WORDS);
+            return;
+        }
+
+        if (words.length === 0) {
+            warnFilterConfig(`"${BAD_WORDS_FILE_PATH}" loaded with 0 words. Censoring may be weak until words are added.`);
+        }
+
         rebuildLookup(words);
-    } catch {
-        rebuildLookup([]);
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        warnFilterConfig(`failed to load "${BAD_WORDS_FILE_PATH}" (${reason}). Using fallback list.`);
+        rebuildLookup(FALLBACK_BAD_WORDS);
     }
 }
 
@@ -237,6 +263,14 @@ function isLikelySevereVariant(lowerToken: string): boolean {
 function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
     if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
+
+    // Catch obfuscated/concatenated severe slurs in long tokens.
+    // We require at least 2 extra chars around the root to avoid common-word false positives.
+    for (const severe of SEVERE_SUBSTRING_ROOTS) {
+        const idx = normalized.indexOf(severe);
+        if (idx === -1) continue;
+        if (normalized.length - severe.length >= 2) return true;
+    }
 
     const usernameCandidate = segment.replace(/^[^A-Za-z0-9_]+|[^A-Za-z0-9_]+$/g, "");
     if (!/^[A-Za-z0-9_]{3,20}$/.test(usernameCandidate)) return false;

@@ -33,6 +33,7 @@ export default class Bot {
     public allowConnection: boolean = true;
     private originalChat?: (message: string) => void;
     private originalWhisper?: (username: string, message: string) => void;
+    private outgoingFilterApplied: boolean = false;
 
     constructor(public options: mineflayer.BotOptions) {
         this.loadConfigs()
@@ -87,6 +88,7 @@ export default class Bot {
         // Create the bot and assign to this.bot
         this.bot = mineflayer.createBot({ ...this.options, auth: "microsoft" });
         this.applyOutgoingMessageFilter();
+        this.bot.once("spawn", () => this.applyOutgoingMessageFilter());
 
         // Load commands and event handlers
         this.loadCommands();
@@ -195,6 +197,8 @@ export default class Bot {
     }
 
     private applyOutgoingMessageFilter() {
+        if (this.outgoingFilterApplied) return;
+
         const chatFn = (this.bot as any).chat;
         if (typeof chatFn !== "function") {
             Logger.warn("Outgoing message filter not applied: bot.chat is unavailable on this mineflayer instance.");
@@ -221,6 +225,8 @@ export default class Bot {
                 return this.originalWhisper?.(username, censored);
             };
         }
+
+        this.outgoingFilterApplied = true;
     }
 
 }

@@ -73,6 +73,14 @@ test("censors concatenated severe words in one token", () => {
   assert.equal(hasBadWords("iamaniggerbitch"), true);
 });
 
+test("censors severe slurs embedded inside long noisy tokens", () => {
+  const input = "testestees12873892!@#!@nigger###gsadfdsatest";
+  const output = censorBadWords(input);
+  assert.equal(hasBadWords(input), true);
+  assert.ok(!output.toLowerCase().includes("nigger"));
+  assert.equal(output[0], "t");
+});
+
 test("does not over-censor benign long words", () => {
   assert.equal(censorBadWords("assessment"), "assessment");
   assert.equal(hasBadWords("assessment"), false);
