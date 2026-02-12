@@ -12,6 +12,7 @@ import * as fs from "fs";
 import time from "../../functions/utils/time.js";
 import { Player } from "forestbot-api-wrapper-v2";
 import { censorBadWords } from "./utils/profanityFilter.js";
+import { applySecondaryFilter } from "./utils/secondaryProfanityFilter.js";
 
 const { ping } = mc;
 
@@ -109,7 +110,8 @@ export default class Bot {
 
 
     public Whisper(user: string, message: string) {
-        const safeMessage = censorBadWords(String(message ?? ""));
+        const firstPass = censorBadWords(String(message ?? ""));
+        const safeMessage = applySecondaryFilter(firstPass);
         this.bot.chat(`/${config.whisperCommand} ${user} ${safeMessage}`);
     }
     /**
@@ -224,7 +226,8 @@ export default class Bot {
         }
 
         this.bot.chat = (message: string) => {
-            const censored = censorBadWords(String(message ?? ""));
+            const firstPass = censorBadWords(String(message ?? ""));
+            const censored = applySecondaryFilter(firstPass);
             const isSlashCommand = String(censored).trimStart().startsWith("/");
             const outgoing = config.useCustomChatPrefix
                 ? (isSlashCommand ? censored : `${config.customChatPrefix} ${censored}`)
@@ -234,7 +237,8 @@ export default class Bot {
 
         if (typeof (this.bot as any).whisper === "function") {
             (this.bot as any).whisper = (username: string, message: string) => {
-                const censored = censorBadWords(String(message ?? ""));
+                const firstPass = censorBadWords(String(message ?? ""));
+                const censored = applySecondaryFilter(firstPass);
                 return this.originalWhisper?.(username, censored);
             };
         }
