@@ -27,3 +27,13 @@ test("still censors explicit short profanity acronyms", () => {
   assert.equal(censorBadWords("stfu now"), "s*** now");
   assert.equal(hasBadWords("kys"), true);
 });
+
+test("censors dotted and separated obfuscations", () => {
+  assert.equal(censorBadWords("f.u.c.k"), "f.*.*.*");
+  assert.equal(hasBadWords("s.h.i.t"), true);
+});
+
+test("censors leetspeak and symbol substitutions", () => {
+  assert.equal(censorBadWords("sh!t b!tch"), "s*!* b!***");
+  assert.equal(hasBadWords("b!tch"), true);
+});

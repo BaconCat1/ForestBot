@@ -1537,6 +1537,22 @@ const BAD_WORD_SET = new Set(NORMALIZED_BAD_WORDS);
 const BAD_WORD_FIRST_CHARS = new Set(NORMALIZED_BAD_WORDS.map((word) => word[0]));
 const CENSOR_CACHE_LIMIT = 2048;
 const censorCache = new Map<string, string>();
+const LEET_CHAR_MAP: Record<string, string> = {
+    "0": "o",
+    "1": "i",
+    "2": "z",
+    "3": "e",
+    "4": "a",
+    "5": "s",
+    "6": "g",
+    "7": "t",
+    "8": "b",
+    "9": "g",
+    "@": "a",
+    "$": "s",
+    "!": "i",
+    "+": "t",
+};
 
 function maskWord(word: string): string {
     if (word.length <= 1) return word;
@@ -1551,12 +1567,60 @@ function isAsciiWordChar(charCode: number): boolean {
     );
 }
 
+function normalizeObfuscatedSegment(segment: string): string {
+    let out = "";
+    for (let i = 0; i < segment.length; i += 1) {
+        const char = segment[i];
+        const code = segment.charCodeAt(i);
+
+        if (isAsciiWordChar(code)) {
+            const lowered = char.toLowerCase();
+            out += LEET_CHAR_MAP[lowered] ?? lowered;
+            continue;
+        }
+
+        const mapped = LEET_CHAR_MAP[char];
+        if (mapped) out += mapped;
+    }
+    return out;
+}
+
 function isBadWordToken(lowerToken: string): boolean {
     if (lowerToken.length === 0) return false;
     if (AMBIGUOUS_TOKENS.has(lowerToken)) return false;
     if (lowerToken.length <= 2 && !EXPLICIT_SHORT_BAD_WORDS.has(lowerToken)) return false;
     if (!BAD_WORD_FIRST_CHARS.has(lowerToken[0])) return false;
     return BAD_WORD_SET.has(lowerToken);
+}
+
+function segmentHasBadWord(segment: string): boolean {
+    const normalized = normalizeObfuscatedSegment(segment);
+    return isBadWordToken(normalized);
+}
+
+function censorSegmentPreserveShape(segment: string): string {
+    let seenFirstWordChar = false;
+    let out = "";
+
+    for (let i = 0; i < segment.length; i += 1) {
+        const char = segment[i];
+        const code = segment.charCodeAt(i);
+        const isWordChar = isAsciiWordChar(code);
+        if (!isWordChar) {
+            out += char;
+            continue;
+        }
+
+        if (!seenFirstWordChar) {
+            out += char;
+            seenFirstWordChar = true;
+            continue;
+        }
+
+        out += "*";
+    }
+
+    return out;
 }
 
 function readFromCache(input: string): string | undefined {
@@ -1589,22 +1653,21 @@ export function censorBadWords(text: string): string {
     let parts: string[] | null = null;
 
     while (i < length) {
-        if (!isAsciiWordChar(text.charCodeAt(i))) {
+        if (/\s/.test(text[i])) {
             i += 1;
             continue;
         }
 
-        const tokenStart = i;
+        const segmentStart = i;
         i += 1;
-        while (i < length && isAsciiWordChar(text.charCodeAt(i))) i += 1;
+        while (i < length && !/\s/.test(text[i])) i += 1;
 
-        const token = text.slice(tokenStart, i);
-        const lowerToken = token.toLowerCase();
-        if (!isBadWordToken(lowerToken)) continue;
+        const segment = text.slice(segmentStart, i);
+        if (!segmentHasBadWord(segment)) continue;
 
         if (!parts) parts = [];
-        if (tokenStart > lastCopiedIndex) parts.push(text.slice(lastCopiedIndex, tokenStart));
-        parts.push(maskWord(token));
+        if (segmentStart > lastCopiedIndex) parts.push(text.slice(lastCopiedIndex, segmentStart));
+        parts.push(censorSegmentPreserveShape(segment));
         lastCopiedIndex = i;
     }
 
@@ -1626,17 +1689,17 @@ export function hasBadWords(text: string): boolean {
     let i = 0;
 
     while (i < length) {
-        if (!isAsciiWordChar(text.charCodeAt(i))) {
+        if (/\s/.test(text[i])) {
             i += 1;
             continue;
         }
 
-        const tokenStart = i;
+        const segmentStart = i;
         i += 1;
-        while (i < length && isAsciiWordChar(text.charCodeAt(i))) i += 1;
+        while (i < length && !/\s/.test(text[i])) i += 1;
 
-        const lowerToken = text.slice(tokenStart, i).toLowerCase();
-        if (isBadWordToken(lowerToken)) return true;
+        const segment = text.slice(segmentStart, i);
+        if (segmentHasBadWord(segment)) return true;
     }
 
     return false;
