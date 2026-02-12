@@ -9,3 +9,4 @@ config.json
 /json/mc_blacklist.json
 /json/mc_whitelist.json
 /DONOTEDIT-REFERENCES/
+/json/offline_messages.json
