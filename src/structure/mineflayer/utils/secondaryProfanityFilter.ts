@@ -13,7 +13,7 @@ const strictProfanity = new Profanity({
  * @returns Filtered text with profanity censored
  */
 export function applySecondaryFilter(text: unknown): string {
-    const textStr = String(text ?? "");
+    const textStr = String(text || "");
     if (textStr.length === 0) return textStr;
     return strictProfanity.censor(textStr, CensorType.Word);
 }
