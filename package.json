@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@2toad/profanity": "^3.2.0"
+    "@2toad/profanity": "^3.2.0",
+    "mineflayer": "^4.20.1",
+    "minecraft-protocol": "^1.46.0"
   }
 }
