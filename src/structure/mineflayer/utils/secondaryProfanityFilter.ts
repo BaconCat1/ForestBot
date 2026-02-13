@@ -9,13 +9,13 @@ const strictProfanity = new Profanity({
 /**
  * Apply secondary profanity filter using @2toad/profanity library
  * This is used as a second layer after the custom profanity filter
- * @param text - Text to filter
+ * @param text - Text to filter (will be coerced to string if not already)
  * @returns Filtered text with profanity censored
  */
-export function applySecondaryFilter(text: string): string {
-    if (typeof text !== "string") return "";
-    if (text.length === 0) return text;
-    return strictProfanity.censor(text, CensorType.Word);
+export function applySecondaryFilter(text: unknown): string {
+    const textStr = String(text ?? "");
+    if (textStr.length === 0) return textStr;
+    return strictProfanity.censor(textStr, CensorType.Word);
 }
 
 /**

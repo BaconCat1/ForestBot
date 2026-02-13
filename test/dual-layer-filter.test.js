@@ -9,8 +9,8 @@ test("secondary filter catches words missed by first layer", () => {
   assert.equal(firstPass, "bloody hell"); // First layer doesn't censor it
   
   const secondPass = applySecondaryFilter(firstPass);
-  assert.ok(secondPass.includes("*")); // Second layer should catch "bloody"
-  assert.notEqual(secondPass, "bloody hell");
+  assert.notEqual(secondPass, "bloody hell"); // Second layer should censor "bloody"
+  assert.ok(!secondPass.includes("bloody")); // The word should be censored
 });
 
 test("dual-layer filtering applies both filters in sequence", () => {
@@ -18,12 +18,12 @@ test("dual-layer filtering applies both filters in sequence", () => {
   
   // First layer catches FUCKY0UB1TCH
   const firstPass = censorBadWords(input);
-  assert.ok(firstPass.includes("*"));
+  assert.notEqual(firstPass, input);
   assert.ok(!firstPass.includes("FUCKY0UB1TCH"));
   
   // Second layer catches "bloody"
   const secondPass = applySecondaryFilter(firstPass);
-  assert.ok(secondPass.includes("*"));
+  assert.notEqual(secondPass, firstPass);
   assert.ok(!secondPass.includes("bloody"));
 });
 
@@ -42,7 +42,7 @@ test("secondary filter detects additional profanity", () => {
   profaneWords.forEach(word => {
     assert.equal(hasSecondaryProfanity(word), true, `Should flag "${word}" as profanity`);
     const censored = applySecondaryFilter(word);
-    assert.ok(censored.includes("*"), `Should censor "${word}"`);
-    assert.notEqual(censored, word, `Should change "${word}"`);
+    assert.notEqual(censored, word, `Should censor "${word}"`);
+    assert.ok(!censored.includes(word), `Censored output should not contain "${word}"`);
   });
 });
