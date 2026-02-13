@@ -327,12 +327,14 @@ function hasConcatenatedBadWords(normalized: string): boolean {
             const idx = normalized.indexOf(word, searchStart);
             if (idx === -1) break;
             
+            const newStart = idx;
+            const newEnd = idx + word.length;
             const overlapsExisting = matches.some(
-                m => (idx >= m.start && idx < m.end) || (idx + word.length > m.start && idx + word.length <= m.end)
+                (m) => newStart < m.end && newEnd > m.start
             );
             
             if (!overlapsExisting) {
-                matches.push({word, start: idx, end: idx + word.length});
+                matches.push({word, start: newStart, end: newEnd});
             }
             
             searchStart = idx + 1;
