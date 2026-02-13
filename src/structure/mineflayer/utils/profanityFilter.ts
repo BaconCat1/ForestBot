@@ -17,7 +17,6 @@ const EXPLICIT_SHORT_BAD_WORDS = new Set([
 ]);
 
 const AMBIGUOUS_TOKENS = new Set([
-    "ass",
     "hell",
     "sex",
     "fan",
@@ -77,6 +76,7 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
     "ɪ": "i",
     "ι": "i",
     "і": "i",
+    "І": "i",
     "⍳": "i",
     "ᵢ": "i",
     "ⁱ": "i",
@@ -112,6 +112,14 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
     "κ": "k",
     "к": "k",
     "х": "x",
+    "с": "c",
+    "ѕ": "s",
+    "р": "p",
+    "у": "y",
+    "в": "b",
+    "м": "m",
+    "ꜱ": "s",
+    "ӏ": "i",
     "★": "a",
     "☆": "a",
     "♥": "o",
@@ -210,19 +218,37 @@ function normalizeObfuscatedSegment(segment: string): string {
     for (const char of segment) {
         const codePoint = char.codePointAt(0);
         if (codePoint === undefined) continue;
+        const lowered = char.toLowerCase();
         
         if (isAsciiWordChar(codePoint)) {
-            const lowered = char.toLowerCase();
             out += LEET_CHAR_MAP[lowered] ?? lowered;
             continue;
         }
 
-        const mapped = LEET_CHAR_MAP[char] ?? UNICODE_CONFUSABLES[char];
+        const mapped =
+            LEET_CHAR_MAP[char] ??
+            LEET_CHAR_MAP[lowered] ??
+            UNICODE_CONFUSABLES[char] ??
+            UNICODE_CONFUSABLES[lowered];
         if (mapped) {
             out += mapped;
         }
     }
     return out;
+}
+
+function isWordLikeCharacter(char: string): boolean {
+    const codePoint = char.codePointAt(0);
+    if (codePoint === undefined) return false;
+    if (isAsciiWordChar(codePoint)) return true;
+
+    const lowered = char.toLowerCase();
+    return (
+        char in LEET_CHAR_MAP ||
+        lowered in LEET_CHAR_MAP ||
+        char in UNICODE_CONFUSABLES ||
+        lowered in UNICODE_CONFUSABLES
+    );
 }
 
 function isBadWordToken(lowerToken: string): boolean {
@@ -502,8 +528,7 @@ export function censorBadWords(text: string): string {
     for (const span of spans) {
         let seenFirstWordChar = false;
         for (let i = span.start; i < span.end; i += 1) {
-            const code = chars[i].charCodeAt(0);
-            if (!isAsciiWordChar(code)) continue;
+            if (!isWordLikeCharacter(chars[i])) continue;
             if (!seenFirstWordChar) {
                 seenFirstWordChar = true;
                 continue;

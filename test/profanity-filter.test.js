@@ -34,8 +34,13 @@ test("censors dotted and separated obfuscations", () => {
 });
 
 test("censors leetspeak and symbol substitutions", () => {
-  assert.equal(censorBadWords("sh!t b!tch"), "s*!* b!***");
+  assert.equal(censorBadWords("sh!t b!tch"), "s*** b****");
   assert.equal(hasBadWords("b!tch"), true);
+});
+
+test("censors symbol-only bypass attempts", () => {
+  assert.equal(censorBadWords("@$$"), "@**");
+  assert.equal(hasBadWords("@$$"), true);
 });
 
 test("censors split-by-space bypasses", () => {
@@ -114,6 +119,8 @@ test("censors Unicode confusable character substitutions", () => {
   assert.equal(hasBadWords("fμck"), true);
   assert.equal(hasBadWords("f∪ck"), true);
   assert.equal(hasBadWords("bıtch"), true);
+  assert.equal(hasBadWords("А$$"), true); // Cyrillic capital A
+  assert.equal(hasBadWords("Ѕhіt"), true); // Cyrillic lookalikes
   const censored = censorBadWords("shıt");
   assert.ok(censored.includes("*"));
 });
