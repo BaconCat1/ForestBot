@@ -124,3 +124,22 @@ test("censors Unicode confusable character substitutions", () => {
   const censored = censorBadWords("shıt");
   assert.ok(censored.includes("*"));
 });
+
+test("censors circled letter bypasses", () => {
+  assert.equal(hasBadWords("ⓝⓘⓖⓖⓔⓡ"), true);
+  assert.equal(hasBadWords("ⓕⓤⓒⓚ"), true);
+  assert.equal(hasBadWords("ⒷⒾⓉⒸⓗ"), true);
+  assert.equal(hasBadWords("ⓢⓗⓘⓣ"), true);
+  const censored1 = censorBadWords("ⓝⓘⓖⓖⓔⓡ");
+  assert.ok(censored1.includes("*"));
+  const censored2 = censorBadWords("ⓕⓤⓒⓚ");
+  assert.ok(censored2.includes("*"));
+});
+
+test("censors Cherokee letter bypasses", () => {
+  assert.equal(hasBadWords("Ꭰick"), true);
+  assert.equal(hasBadWords("ꭰick"), true);
+  assert.equal(hasBadWords("ꭰⓘⓒⓚ"), true);
+  const censored = censorBadWords("Ꭰick");
+  assert.ok(censored.includes("*"));
+});
