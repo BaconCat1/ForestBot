@@ -85,3 +85,35 @@ test("does not over-censor benign long words", () => {
   assert.equal(censorBadWords("assessment"), "assessment");
   assert.equal(hasBadWords("assessment"), false);
 });
+
+test("censors concatenated bad words with leetspeak", () => {
+  assert.equal(hasBadWords("FUCKY0UB1TCH"), true);
+  assert.equal(hasBadWords("fucky0ubitch"), true);
+  assert.equal(hasBadWords("FUCKYOUBITCH"), true);
+  assert.equal(hasBadWords("fuckbitch"), true);
+  assert.equal(hasBadWords("shitfuck"), true);
+  assert.equal(hasBadWords("bitchass"), true);
+  const censored = censorBadWords("FUCKY0UB1TCH");
+  assert.ok(!censored.toLowerCase().includes("fuck"));
+  assert.ok(!censored.toLowerCase().includes("bitch"));
+});
+
+test("censors emoji character substitutions", () => {
+  assert.equal(hasBadWords("sh💩t"), true);
+  assert.equal(hasBadWords("sh🅸️t"), true);
+  assert.equal(hasBadWords("f★ck"), true);
+  assert.equal(hasBadWords("b👁tch"), true);
+  const censored1 = censorBadWords("sh💩t");
+  assert.ok(censored1.includes("*"));
+  const censored2 = censorBadWords("f★ck");
+  assert.ok(censored2.includes("*"));
+});
+
+test("censors Unicode confusable character substitutions", () => {
+  assert.equal(hasBadWords("shıt"), true);
+  assert.equal(hasBadWords("fμck"), true);
+  assert.equal(hasBadWords("f∪ck"), true);
+  assert.equal(hasBadWords("bıtch"), true);
+  const censored = censorBadWords("shıt");
+  assert.ok(censored.includes("*"));
+});

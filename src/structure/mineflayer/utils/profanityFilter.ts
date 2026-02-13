@@ -71,6 +71,56 @@ const LEET_CHAR_MAP: Record<string, string> = {
     "+": "t",
 };
 
+const UNICODE_CONFUSABLES: Record<string, string> = {
+    "ı": "i",
+    "İ": "i",
+    "ɪ": "i",
+    "ι": "i",
+    "і": "i",
+    "⍳": "i",
+    "ᵢ": "i",
+    "ⁱ": "i",
+    "ο": "o",
+    "о": "o",
+    "σ": "o",
+    "⊙": "o",
+    "◯": "o",
+    "●": "o",
+    "⭕": "o",
+    "🔴": "o",
+    "⚫": "o",
+    "⚪": "o",
+    "α": "a",
+    "а": "a",
+    "∂": "a",
+    "⍺": "a",
+    "🅰": "a",
+    "ε": "e",
+    "е": "e",
+    "∈": "e",
+    "υ": "u",
+    "ʋ": "u",
+    "ս": "u",
+    "∪": "u",
+    "ʊ": "u",
+    "μ": "u",
+    "τ": "t",
+    "т": "t",
+    "∩": "n",
+    "η": "n",
+    "п": "n",
+    "κ": "k",
+    "к": "k",
+    "х": "x",
+    "★": "a",
+    "☆": "a",
+    "♥": "o",
+    "❤": "o",
+    "💩": "i",
+    "👁": "i",
+    "🅸": "i",
+};
+
 let normalizedBadWords: string[] = [];
 let BAD_WORD_SET = new Set<string>();
 let BAD_WORD_FIRST_CHARS = new Set<string>();
@@ -156,18 +206,21 @@ function isAsciiWordChar(charCode: number): boolean {
 
 function normalizeObfuscatedSegment(segment: string): string {
     let out = "";
-    for (let i = 0; i < segment.length; i += 1) {
-        const char = segment[i];
-        const code = segment.charCodeAt(i);
-
-        if (isAsciiWordChar(code)) {
+    
+    for (const char of segment) {
+        const codePoint = char.codePointAt(0);
+        if (codePoint === undefined) continue;
+        
+        if (isAsciiWordChar(codePoint)) {
             const lowered = char.toLowerCase();
             out += LEET_CHAR_MAP[lowered] ?? lowered;
             continue;
         }
 
-        const mapped = LEET_CHAR_MAP[char];
-        if (mapped) out += mapped;
+        const mapped = LEET_CHAR_MAP[char] ?? UNICODE_CONFUSABLES[char];
+        if (mapped) {
+            out += mapped;
+        }
     }
     return out;
 }
@@ -260,9 +313,43 @@ function isLikelySevereVariant(lowerToken: string): boolean {
     return false;
 }
 
+const MIN_CONCATENATED_LENGTH = 8;
+
+function hasConcatenatedBadWords(normalized: string): boolean {
+    if (normalized.length < MIN_CONCATENATED_LENGTH) return false;
+    
+    const commonBadWords = ["fuck", "shit", "bitch", "cunt", "whore", "damn", "pussy"];
+    const matches: Array<{word: string; start: number; end: number}> = [];
+    
+    for (const word of commonBadWords) {
+        let searchStart = 0;
+        while (searchStart < normalized.length) {
+            const idx = normalized.indexOf(word, searchStart);
+            if (idx === -1) break;
+            
+            const newStart = idx;
+            const newEnd = idx + word.length;
+            const overlapsExisting = matches.some(
+                (m) => newStart < m.end && newEnd > m.start
+            );
+            
+            if (!overlapsExisting) {
+                matches.push({word, start: newStart, end: newEnd});
+            }
+            
+            searchStart = idx + 1;
+        }
+    }
+    
+    return matches.length >= 2;
+}
+
 function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
     if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
+
+    // Check for multiple concatenated bad words (e.g., "fuckyoubitch")
+    if (hasConcatenatedBadWords(normalized)) return true;
 
     // Catch obfuscated/concatenated severe slurs in long tokens.
     // We require at least 2 extra chars around the root to avoid common-word false positives.
