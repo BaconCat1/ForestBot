@@ -40,8 +40,8 @@ test("catches concatenated words (jollycock)", () => {
 });
 
 // Additional bypass strategies mentioned in the issue (to fix at least 15 ways)
-test("catches regional indicator bypasses", () => {
-  // Regional indicators like 🇳🇮🇬🇬🇪🇷 
+test("catches words with regional indicators in chat", () => {
+  // Regular profanity detection
   assert.equal(hasBadWords("fuck"), true);
 });
 

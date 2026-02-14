@@ -163,7 +163,7 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
     "𝐕": "v", "𝐖": "w", "𝐗": "x", "𝐘": "y", "𝐙": "z",
     // Mathematical alphanumeric symbols - Italic
     "𝑎": "a", "𝑏": "b", "𝑐": "c", "𝑑": "d", "𝑒": "e", "𝑓": "f", "𝑔": "g",
-    "𝘩": "h", "𝑖": "i", "𝑗": "j", "𝑘": "k", "𝑙": "l", "𝑚": "m", "𝑛": "n",
+    "𝑖": "i", "𝑗": "j", "𝑘": "k", "𝑙": "l", "𝑚": "m", "𝑛": "n",
     "𝑜": "o", "𝑝": "p", "𝑞": "q", "𝑟": "r", "𝑠": "s", "𝑡": "t", "𝑢": "u",
     "𝑣": "v", "𝑤": "w", "𝑥": "x", "𝑦": "y", "𝑧": "z",
     // Small caps and phonetic symbols
@@ -298,7 +298,8 @@ const SEVERE_SUBSTRING_ROOTS = [...new Set([
     "spic",
     "chink",
     "asshole",
-    // Include commonly embedded words (duplicates from SEVERE_BASE_WORDS are intentional)
+    // Include select SEVERE_BASE_WORDS for compound detection
+    // Note: "ass" and "shit" excluded to avoid false positives in words like "assessment", "shitstorm", etc.
     "cock",
     "dick",
     "pussy",
