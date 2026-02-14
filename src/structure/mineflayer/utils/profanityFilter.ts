@@ -56,14 +56,14 @@ const SEVERE_FIRST_CHARS = new Set(SEVERE_BASE_WORDS.map((word) => word[0]));
 
 // Chinese character equivalents for slurs - map to English transliterations
 const CHINESE_SLUR_MAP: Record<string, string> = {
-    "黑鬼": "nigger",  // "black ghost/devil" - Chinese slur
-    "尼哥": "nigger",  // phonetic approximation
-    "黑人": "black",   // "black person" - less offensive but watch in context
-    "傻逼": "fuck",    // very offensive in Chinese
-    "操": "fuck",      // profanity
-    "妈的": "fuck",    // "damn" literally "mother's"
-    "婊子": "bitch",   // bitch/whore
-    "婊": "bitch",
+    "黑鬼": "nigger",  // Severe: "black ghost/devil" - highly offensive Chinese racial slur
+    "尼哥": "nigger",  // Severe: phonetic approximation of n-word
+    "黑人": "black",   // Moderate: "black person" - less offensive but watch in context
+    "傻逼": "fuck",    // Severe: very offensive in Chinese
+    "操": "fuck",      // Severe: profanity
+    "妈的": "fuck",    // Severe: "damn" literally "mother's"
+    "婊子": "bitch",   // Severe: bitch/whore
+    "婊": "bitch",     // Severe: shortened form
 };
 
 const CENSOR_CACHE_LIMIT = 2048;
@@ -180,11 +180,10 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
     "ʰ": "h", "ʲ": "j", "ᵏ": "k", "ˡ": "l", "ᵐ": "m", "ⁿ": "n",
     "ᵒ": "o", "ᵖ": "p", "ʳ": "r", "ˢ": "s", "ᵗ": "t", "ᵘ": "u", "ᵛ": "v",
     "ʷ": "w", "ˣ": "x", "ʸ": "y", "ᶻ": "z",
-    // Upside down characters
-    "ɐ": "a", "q": "b", "ɔ": "c", "p": "d", "ǝ": "e", "ɟ": "f", "ɓ": "b",
-    "ɥ": "h", "ᴉ": "i", "ɾ": "r", "ʞ": "k", "l": "l", "ɯ": "m", "u": "n",
-    "o": "o", "d": "p", "b": "q", "ɹ": "r", "s": "s", "ʇ": "t", "n": "u",
-    "ʌ": "v", "ʍ": "w", "x": "x", "ʎ": "y", "z": "z",
+    // Upside down characters (only Unicode lookalikes, not ASCII)
+    "ɐ": "a", "ɔ": "c", "ǝ": "e", "ɟ": "f", "ɓ": "b",
+    "ɥ": "h", "ᴉ": "i", "ɾ": "r", "ʞ": "k", "ɯ": "m",
+    "ɹ": "r", "ʇ": "t", "ʌ": "v", "ʍ": "w", "ʎ": "y",
     // Backwards letters (approximations)
     "ᴎ": "n", "ǫ": "q",
     // More Greek confusables
@@ -299,6 +298,7 @@ const SEVERE_SUBSTRING_ROOTS = [...new Set([
     "spic",
     "chink",
     "asshole",
+    // Include commonly embedded words (duplicates from SEVERE_BASE_WORDS are intentional)
     "cock",
     "dick",
     "pussy",
@@ -563,11 +563,14 @@ function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
     if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
 
-    // Check for Chinese slurs
-    for (const [chineseSlur, englishEquiv] of Object.entries(CHINESE_SLUR_MAP)) {
-        if (segment.includes(chineseSlur)) return true;
-        // Also check the normalized version in case it's mixed with other chars
-        if (normalized.includes(englishEquiv)) return true;
+    // Check for Chinese slurs only if segment contains CJK characters
+    const hasCJK = /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(segment);
+    if (hasCJK) {
+        for (const [chineseSlur, englishEquiv] of Object.entries(CHINESE_SLUR_MAP)) {
+            if (segment.includes(chineseSlur)) return true;
+            // Also check the normalized version in case it's mixed with other chars
+            if (normalized.includes(englishEquiv)) return true;
+        }
     }
 
     // Check for reversed/backwards text
