@@ -47,8 +47,24 @@ const SEVERE_BASE_WORDS = [
     "bitch",
     "cunt",
     "whore",
+    "cock",
+    "dick",
+    "ass",
+    "shit",
 ];
 const SEVERE_FIRST_CHARS = new Set(SEVERE_BASE_WORDS.map((word) => word[0]));
+
+// Chinese character equivalents for slurs - map to English transliterations
+const CHINESE_SLUR_MAP: Record<string, string> = {
+    "黑鬼": "nigger",  // Severe: "black ghost/devil" - highly offensive Chinese racial slur
+    "尼哥": "nigger",  // Severe: phonetic approximation of n-word
+    "黑人": "black",   // Moderate: "black person" - less offensive but watch in context
+    "傻逼": "fuck",    // Severe: very offensive in Chinese
+    "操": "fuck",      // Severe: profanity
+    "妈的": "fuck",    // Severe: "damn" literally "mother's"
+    "婊子": "bitch",   // Severe: bitch/whore
+    "婊": "bitch",     // Severe: shortened form
+};
 
 const CENSOR_CACHE_LIMIT = 2048;
 const censorCache = new Map<string, string>();
@@ -127,6 +143,62 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
     "💩": "i",
     "👁": "i",
     "🅸": "i",
+    // Fullwidth Latin characters (U+FF01-U+FF5E)
+    "ａ": "a", "ｂ": "b", "ｃ": "c", "ｄ": "d", "ｅ": "e", "ｆ": "f", "ｇ": "g",
+    "ｈ": "h", "ｉ": "i", "ｊ": "j", "ｋ": "k", "ｌ": "l", "ｍ": "m", "ｎ": "n",
+    "ｏ": "o", "ｐ": "p", "ｑ": "q", "ｒ": "r", "ｓ": "s", "ｔ": "t", "ｕ": "u",
+    "ｖ": "v", "ｗ": "w", "ｘ": "x", "ｙ": "y", "ｚ": "z",
+    "Ａ": "a", "Ｂ": "b", "Ｃ": "c", "Ｄ": "d", "Ｅ": "e", "Ｆ": "f", "Ｇ": "g",
+    "Ｈ": "h", "Ｉ": "i", "Ｊ": "j", "Ｋ": "k", "Ｌ": "l", "Ｍ": "m", "Ｎ": "n",
+    "Ｏ": "o", "Ｐ": "p", "Ｑ": "q", "Ｒ": "r", "Ｓ": "s", "Ｔ": "t", "Ｕ": "u",
+    "Ｖ": "v", "Ｗ": "w", "Ｘ": "x", "Ｙ": "y", "Ｚ": "z",
+    // Mathematical alphanumeric symbols - Bold (U+1D400-U+1D433)
+    "𝐚": "a", "𝐛": "b", "𝐜": "c", "𝐝": "d", "𝐞": "e", "𝐟": "f", "𝐠": "g",
+    "𝐡": "h", "𝐢": "i", "𝐣": "j", "𝐤": "k", "𝐥": "l", "𝐦": "m", "𝐧": "n",
+    "𝐨": "o", "𝐩": "p", "𝐪": "q", "𝐫": "r", "𝐬": "s", "𝐭": "t", "𝐮": "u",
+    "𝐯": "v", "𝐰": "w", "𝐱": "x", "𝐲": "y", "𝐳": "z",
+    "𝐀": "a", "𝐁": "b", "𝐂": "c", "𝐃": "d", "𝐄": "e", "𝐅": "f", "𝐆": "g",
+    "𝐇": "h", "𝐈": "i", "𝐉": "j", "𝐊": "k", "𝐋": "l", "𝐌": "m", "𝐍": "n",
+    "𝐎": "o", "𝐏": "p", "𝐐": "q", "𝐑": "r", "𝐒": "s", "𝐓": "t", "𝐔": "u",
+    "𝐕": "v", "𝐖": "w", "𝐗": "x", "𝐘": "y", "𝐙": "z",
+    // Mathematical alphanumeric symbols - Italic
+    "𝑎": "a", "𝑏": "b", "𝑐": "c", "𝑑": "d", "𝑒": "e", "𝑓": "f", "𝑔": "g",
+    "𝑖": "i", "𝑗": "j", "𝑘": "k", "𝑙": "l", "𝑚": "m", "𝑛": "n",
+    "𝑜": "o", "𝑝": "p", "𝑞": "q", "𝑟": "r", "𝑠": "s", "𝑡": "t", "𝑢": "u",
+    "𝑣": "v", "𝑤": "w", "𝑥": "x", "𝑦": "y", "𝑧": "z",
+    // Small caps and phonetic symbols
+    "ɴ": "n", "ɢ": "g", "ʀ": "r", "ᴀ": "a", "ʙ": "b", "ᴄ": "c", "ᴅ": "d",
+    "ᴇ": "e", "ꜰ": "f", "ʜ": "h", "ᴊ": "j", "ᴋ": "k",
+    "ʟ": "l", "ᴍ": "m", "ᴏ": "o", "ᴘ": "p", "ᴛ": "t", "ᴜ": "u", "ᴠ": "v", "ᴡ": "w", "ʏ": "y", "ᴢ": "z",
+    "ɡ": "g",  // Latin small letter script g (U+0261)
+    // Subscript letters
+    "ₐ": "a", "ₑ": "e", "ₕ": "h", "ⱼ": "j", "ₖ": "k", "ₗ": "l",
+    "ₘ": "m", "ₙ": "n", "ₒ": "o", "ₚ": "p", "ᵣ": "r", "ₛ": "s", "ₜ": "t",
+    "ᵤ": "u", "ᵥ": "v", "ₓ": "x",
+    // Superscript letters
+    "ᵃ": "a", "ᵇ": "b", "ᶜ": "c", "ᵈ": "d", "ᵉ": "e", "ᶠ": "f", "ᵍ": "g",
+    "ʰ": "h", "ʲ": "j", "ᵏ": "k", "ˡ": "l", "ᵐ": "m", "ⁿ": "n",
+    "ᵒ": "o", "ᵖ": "p", "ʳ": "r", "ˢ": "s", "ᵗ": "t", "ᵘ": "u", "ᵛ": "v",
+    "ʷ": "w", "ˣ": "x", "ʸ": "y", "ᶻ": "z",
+    // Upside down characters (only Unicode lookalikes, not ASCII)
+    "ɐ": "a", "ɔ": "c", "ǝ": "e", "ɟ": "f", "ɓ": "b",
+    "ɥ": "h", "ᴉ": "i", "ɾ": "r", "ʞ": "k", "ɯ": "m",
+    "ɹ": "r", "ʇ": "t", "ʌ": "v", "ʍ": "w", "ʎ": "y",
+    // Backwards letters (approximations)
+    "ᴎ": "n", "ǫ": "q",
+    // More Greek confusables
+    "Ϲ": "c", "ⲥ": "c", "ϲ": "c", "Α": "a", "Β": "b", "Ε": "e", "Ζ": "z",
+    "Η": "h", "Ι": "i", "Κ": "k", "Μ": "m", "Ν": "n", "Ο": "o", "Ρ": "p",
+    "Τ": "t", "Υ": "y", "Χ": "x",
+    // Runic characters that look like Latin
+    "ᛔ": "b", "ᚱ": "r", "ᛏ": "t", "ᚺ": "h", "ᚠ": "f", "ᛒ": "b",
+    // Chinese/Japanese numbers and similar
+    "十": "t", "丁": "t", "〇": "o", "○": "o", "零": "o",
+    // Enclosed alphanumerics (U+1F100-U+1F1FF)
+    "🄰": "a", "🄱": "b", "🄲": "c", "🄳": "d", "🄴": "e", "🄵": "f", "🄶": "g",
+    "🄷": "h", "🄸": "i", "🄹": "j", "🄺": "k", "🄻": "l", "🄼": "m", "🄽": "n",
+    "🄾": "o", "🄿": "p", "🅀": "q", "🅁": "r", "🅂": "s", "🅃": "t", "🅄": "u",
+    "🅅": "v", "🅆": "w", "🅇": "x", "🅈": "y", "🅉": "z",
     // Circled letters (uppercase A-Z: U+24B6 to U+24CF)
     "Ⓐ": "a",
     "Ⓑ": "b",
@@ -226,6 +298,12 @@ const SEVERE_SUBSTRING_ROOTS = [...new Set([
     "spic",
     "chink",
     "asshole",
+    // Include select SEVERE_BASE_WORDS for compound detection
+    // Note: "ass" and "shit" excluded to avoid false positives in words like "assessment", "shitstorm", etc.
+    "cock",
+    "dick",
+    "pussy",
+    "cunt",
 ])];
 const FALLBACK_BAD_WORDS = [...new Set([...SEVERE_BASE_WORDS, ...SEVERE_SUBSTRING_ROOTS])];
 
@@ -304,6 +382,25 @@ function normalizeObfuscatedSegment(segment: string): string {
     for (const char of segment) {
         const codePoint = char.codePointAt(0);
         if (codePoint === undefined) continue;
+        
+        // Skip zero-width characters
+        if (codePoint === 0x200B || // Zero Width Space
+            codePoint === 0x200C || // Zero Width Non-Joiner
+            codePoint === 0x200D || // Zero Width Joiner
+            codePoint === 0xFEFF) { // Zero Width No-Break Space
+            continue;
+        }
+        
+        // Skip combining diacritical marks (U+0300-U+036F)
+        if (codePoint >= 0x0300 && codePoint <= 0x036F) {
+            continue;
+        }
+        
+        // Skip combining marks for symbols (U+20D0-U+20FF)
+        if (codePoint >= 0x20D0 && codePoint <= 0x20FF) {
+            continue;
+        }
+        
         const lowered = char.toLowerCase();
         
         if (isAsciiWordChar(codePoint)) {
@@ -327,6 +424,13 @@ function isWordLikeCharacter(char: string): boolean {
     const codePoint = char.codePointAt(0);
     if (codePoint === undefined) return false;
     if (isAsciiWordChar(codePoint)) return true;
+
+    // Chinese/CJK characters are word-like
+    if ((codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||  // CJK Unified Ideographs
+        (codePoint >= 0x3400 && codePoint <= 0x4DBF) ||  // CJK Extension A
+        (codePoint >= 0x20000 && codePoint <= 0x2A6DF)) { // CJK Extension B
+        return true;
+    }
 
     const lowered = char.toLowerCase();
     return (
@@ -459,6 +563,20 @@ function hasConcatenatedBadWords(normalized: string): boolean {
 function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
     if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
+
+    // Check for Chinese slurs only if segment contains CJK characters
+    const hasCJK = /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(segment);
+    if (hasCJK) {
+        for (const [chineseSlur, englishEquiv] of Object.entries(CHINESE_SLUR_MAP)) {
+            if (segment.includes(chineseSlur)) return true;
+            // Also check the normalized version in case it's mixed with other chars
+            if (normalized.includes(englishEquiv)) return true;
+        }
+    }
+
+    // Check for reversed/backwards text
+    const reversed = normalized.split("").reverse().join("");
+    if (isBadWordToken(reversed) || isLikelySevereVariant(reversed)) return true;
 
     // Check for multiple concatenated bad words (e.g., "fuckyoubitch")
     if (hasConcatenatedBadWords(normalized)) return true;
