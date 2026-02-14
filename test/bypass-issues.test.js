@@ -52,8 +52,10 @@ test("catches Zero Width Characters", () => {
 });
 
 test("catches subscript/superscript bypasses", () => {
-  // Using subscript/superscript unicode
-  assert.equal(hasBadWords("ₙᵢₜₜₑᵣ"), true);
+  // Using subscript/superscript unicode - "shit" in subscript
+  assert.equal(hasBadWords("ₛₕᵢₜ"), true);
+  const censored = censorBadWords("ₛₕᵢₜ");
+  assert.ok(censored.includes("*"));
 });
 
 test("catches strikethrough unicode bypasses", () => {
@@ -73,8 +75,10 @@ test("catches backwards text", () => {
 });
 
 test("catches upside-down text", () => {
-  // Upside down unicode
-  assert.equal(hasBadWords("ɹǝɓɓᴉu"), true);
+  // Upside down unicode - "shit" upside down and reversed = ʇᴉɥs
+  assert.equal(hasBadWords("ʇᴉɥs"), true);
+  const censored = censorBadWords("ʇᴉɥs");
+  assert.ok(censored.includes("*"));
 });
 
 test("catches homoglyph sequences", () => {
