@@ -13,6 +13,7 @@ import time from "../../functions/utils/time.js";
 import { Player } from "forestbot-api-wrapper-v2";
 import { censorBadWords } from "./utils/profanityFilter.js";
 import { applySecondaryFilter } from "./utils/secondaryProfanityFilter.js";
+import { maybeSmartCensorMessage } from "./utils/aiSmartCensor.js";
 
 const { ping } = mc;
 
@@ -37,6 +38,7 @@ export default class Bot {
     private outgoingFilterApplied: boolean = false;
     private outgoingFilterWarned: boolean = false;
     private outgoingFilterRetryInterval?: NodeJS.Timeout;
+    private outgoingSendQueue: Promise<void> = Promise.resolve();
 
     constructor(public options: mineflayer.BotOptions) {
         this.loadConfigs()
@@ -120,9 +122,13 @@ export default class Bot {
 
 
     public Whisper(user: string, message: string) {
-        const firstPass = censorBadWords(String(message ?? ""));
-        const safeMessage = applySecondaryFilter(firstPass);
-        this.bot.chat(`/${config.whisperCommand} ${user} ${safeMessage}`);
+        const username = String(user ?? "");
+        const rawMessage = String(message ?? "");
+
+        this.enqueueOutgoingSend(async () => {
+            const safeMessage = await this.censorOutgoingMessage(rawMessage, false);
+            this.originalChat?.(`/${config.whisperCommand} ${username} ${safeMessage}`);
+        });
     }
     /**
      * 
@@ -236,20 +242,27 @@ export default class Bot {
         }
 
         this.bot.chat = (message: string) => {
-            const firstPass = censorBadWords(String(message ?? ""));
-            const censored = applySecondaryFilter(firstPass);
-            const isSlashCommand = String(censored).trimStart().startsWith("/");
-            const outgoing = config.useCustomChatPrefix
-                ? (isSlashCommand ? censored : `${config.customChatPrefix} ${censored}`)
-                : censored;
-            return this.originalChat?.(outgoing);
+            const rawMessage = String(message ?? "");
+            this.enqueueOutgoingSend(async () => {
+                const isSlashCommand = rawMessage.trimStart().startsWith("/");
+                const censored = await this.censorOutgoingMessage(rawMessage, isSlashCommand);
+                const outgoing = config.useCustomChatPrefix
+                    ? (isSlashCommand ? censored : `${config.customChatPrefix} ${censored}`)
+                    : censored;
+                this.originalChat?.(outgoing);
+            });
+            return;
         };
 
         if (typeof (this.bot as any).whisper === "function") {
             (this.bot as any).whisper = (username: string, message: string) => {
-                const firstPass = censorBadWords(String(message ?? ""));
-                const censored = applySecondaryFilter(firstPass);
-                return this.originalWhisper?.(username, censored);
+                const targetUser = String(username ?? "");
+                const rawMessage = String(message ?? "");
+                this.enqueueOutgoingSend(async () => {
+                    const censored = await this.censorOutgoingMessage(rawMessage, false);
+                    this.originalWhisper?.(targetUser, censored);
+                });
+                return;
             };
         }
 
@@ -275,6 +288,36 @@ export default class Bot {
             }
             this.applyOutgoingMessageFilter();
         }, 500);
+    }
+
+    private enqueueOutgoingSend(task: () => Promise<void>) {
+        this.outgoingSendQueue = this.outgoingSendQueue
+            .then(() => task())
+            .catch((error) => {
+                const reason = error instanceof Error ? error.message : String(error);
+                Logger.warn(`Outgoing send task failed: ${reason}`);
+            });
+    }
+
+    private async censorOutgoingMessage(message: string, skipSmartCensor: boolean): Promise<string> {
+        const firstPass = censorBadWords(String(message ?? ""));
+        const regularCensored = applySecondaryFilter(firstPass);
+
+        if (skipSmartCensor || !config.smart_censoring) {
+            return regularCensored;
+        }
+
+        const aiCensored = await maybeSmartCensorMessage(String(message ?? ""), {
+            enabled: config.smart_censoring,
+            apiKey: config.together_api_key,
+        });
+
+        if (!aiCensored) {
+            return regularCensored;
+        }
+
+        const normalizedAiOutput = applySecondaryFilter(censorBadWords(String(aiCensored)));
+        return normalizedAiOutput || regularCensored;
     }
 
 }

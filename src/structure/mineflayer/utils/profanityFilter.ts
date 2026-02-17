@@ -71,6 +71,7 @@ const LEET_CHAR_MAP: Record<string, string> = {
     "$": "s",
     "!": "i",
     "+": "t",
+    "(": "c",
 };
 
 const UNICODE_CONFUSABLES: Record<string, string> = {

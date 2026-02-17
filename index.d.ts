@@ -90,6 +90,9 @@ type Config = {
     allow_chatbridge_input: boolean
     rotateHeadOnJoin: boolean
 
+    smart_censoring: boolean
+    together_api_key: string
+
     usePViewer: boolean
     pViewerPort: number
 }

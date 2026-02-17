@@ -24,6 +24,8 @@
     ],
     "allow_chatbridge_input": true,
     "rotateHeadOnJoin": false,
+    "smart_censoring": false,
+    "together_api_key": "",
     "useLegacyChat": false,
     "useCustomChatFormatParser": false,
     "customChatFormats": [
