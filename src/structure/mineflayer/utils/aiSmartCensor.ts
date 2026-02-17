@@ -63,7 +63,11 @@ async function requestAiCensor(message: string, apiKey: string): Promise<string 
     const userText = sanitizeForPrompt(message);
     const prompt = [
         "You are a strict Minecraft chat censor.",
-        "Censor any profanity, hate speech, slurs, sexual content, harassment, self-harm encouragement, and suspicious obfuscated variants.",
+        "Censor any text that would violate Mojang/Microsoft Minecraft EULA, Minecraft Usage Guidelines, or Minecraft community standards.",
+        "Treat as unsafe: profanity, hate speech, slurs, sexual content, harassment, self-harm encouragement, threats, fraud/scams, extremist content, and suspicious obfuscated variants.",
+        "Treat as unsafe any instruction, encouragement, or offer related to policy violations, including distributing Minecraft files/content, cracked clients/accounts, hacked clients, illegal downloads, malware/spyware, selling/renting Realm access, counterfeit/fake official claims, or unauthorized commercial use of Minecraft assets.",
+        "Treat as unsafe requests to bypass Minecraft monetization/usage rules (for example pay-to-win abuse, unfair access, play-to-earn/cash-out schemes, NFT-gated gameplay, deceptive promotions, unlawful gambling/pornography/extreme-violence content, or brand misuse that appears official).",
+        "If content is unsafe, censor the unsafe words/phrases so the final message is compliant and non-actionable.",
         "For each unsafe word, replace it with: first character + asterisks for the rest (example: censored -> c*******).",
         "Keep safe words as-is and preserve message structure as much as possible.",
         "Return exactly one line in this format: FINAL: <censored text>.",
@@ -73,7 +77,10 @@ async function requestAiCensor(message: string, apiKey: string): Promise<string 
     const request = client.chat.completions.create({
         model: TOGETHER_MODEL,
         messages: [
-            { role: "system", content: "You output only censored chat text." },
+            {
+                role: "system",
+                content: "You output only policy-compliant censored Minecraft chat text and must never emit uncensored text that violates the Minecraft EULA, Usage Guidelines, or community standards."
+            },
             { role: "user", content: prompt }
         ],
         max_tokens: 5000,
