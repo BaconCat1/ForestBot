@@ -3,7 +3,7 @@ import { config } from "../config.js";
 import type Bot from "../structure/mineflayer/Bot.js";
 import { censorBadWords } from "../structure/mineflayer/utils/profanityFilter.js";
 
-const SHOUT_COOLDOWN_MS = 10 * 60 * 1000;
+const SHOUT_COOLDOWN_MS = 1 * 60 * 1000;
 let lastShoutAt = 0;
 
 export default {
@@ -11,7 +11,7 @@ export default {
     description: `Broadcasts a message to all connected Forest servers. Usage: ${config.prefix}shout <message>`,
     minArgs: 1,
     maxArgs: 255,
-    whitelisted: true,
+    whitelisted: false,
     execute: async (user: string, args: string[], bot: Bot, api: ForestBotAPI) => {
         const rawMessage = args.join(" ").trim();
         const message = censorBadWords(rawMessage).replace(/\//g, "").trim();

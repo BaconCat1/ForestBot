@@ -5,6 +5,7 @@ import mcCommandHandler from "../../structure/mineflayer/utils/commandHandler.js
 import parseUsername from "../../structure/mineflayer/utils/parseUsername.js";
 import { stripMinecraftFormatting } from "../../structure/mineflayer/utils/stripMinecraftFormatting.js";
 import { isSelfStandingCommand } from "../../structure/mineflayer/utils/isStandingCommand.js";
+import { parseConfiguredChatFormatMessage } from "../../structure/mineflayer/utils/chatFormatParser.js";
 
 const log = Logger;
 
@@ -252,6 +253,15 @@ export default {
             uuid = Bot.bot.players[username].uuid;
             message = msgContent.trim();
           }
+        }
+      }
+
+      if (!username) {
+        const customParsed = parseConfiguredChatFormatMessage(rawMessage, Bot.bot, config);
+        if (customParsed) {
+          username = customParsed.player;
+          uuid = Bot.bot.players[username]?.uuid ?? uuid;
+          message = customParsed.message;
         }
       }
 

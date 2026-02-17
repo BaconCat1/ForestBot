@@ -25,6 +25,12 @@
     "allow_chatbridge_input": true,
     "rotateHeadOnJoin": false,
     "useLegacyChat": false,
+    "useCustomChatFormatParser": false,
+    "customChatFormats": [
+        "<{username}> {message}",
+        "{username}: {message}",
+        "[{skip}] {username} >> {message}"
+    ],
     "commands": {
         "urban": true,
         "kill": false,

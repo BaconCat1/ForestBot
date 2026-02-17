@@ -97,6 +97,16 @@ export default class Bot {
 
         // Create the bot and assign to this.bot
         this.bot = mineflayer.createBot({ ...this.options, auth: "microsoft" });
+        this.bot.on("physicsTick", () => {
+            const client = (this.bot as any)?._client;
+            if (typeof client?.write !== "function") return;
+            try {
+                client.write("tick_end", {});
+            } catch {
+                // Packet may not exist on this protocol/version.
+            }
+        });
+
         this.applyOutgoingMessageFilter();
         this.bot.once("spawn", () => this.applyOutgoingMessageFilter());
 

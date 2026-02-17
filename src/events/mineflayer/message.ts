@@ -5,6 +5,7 @@ import { config } from '../../config.js';
 import { parseChatDividerMessage } from '../../structure/mineflayer/utils/chatDividerParser.js';
 import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/stripMinecraftFormatting.js';
 import { isSelfStandingCommand } from '../../structure/mineflayer/utils/isStandingCommand.js';
+import { parseConfiguredChatFormatMessage } from '../../structure/mineflayer/utils/chatFormatParser.js';
 
 const ignoreContains = [
     "joined the game",
@@ -161,8 +162,9 @@ export default {
         const rawFirstWord = words[0] ?? "";
         const normalizedFirstWord = normalizeWord(rawFirstWord);
 
+        const customParsed = parseConfiguredChatFormatMessage(fullMsg, Bot.bot, config);
         const dividerParsed = parseChatDividerMessage(fullMsg, Bot.bot);
-        const { player, message } = dividerParsed ?? extractPlayerMessage(fullMsg, currentOnlinePlayers);
+        const { player, message } = customParsed ?? dividerParsed ?? extractPlayerMessage(fullMsg, currentOnlinePlayers);
         if (!player) return;
 
         const uuid = await api.convertUsernameToUuid(player);
@@ -192,7 +194,7 @@ export default {
         }
 
         // --- Chat divider (> / >> / \u00bb) detection: treat as chat, not death ---
-        const isChatDivider = Boolean(dividerParsed) || dividerPattern.test(fullMsg);
+        const isChatDivider = Boolean(customParsed || dividerParsed) || dividerPattern.test(fullMsg);
 
         if (!isChatDivider && isDeathOrSystemMessage(fullMsg, rawFirstWord, normalizedFirstWord)) {
             let murderer: string | null = null;

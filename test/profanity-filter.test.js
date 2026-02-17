@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { censorBadWords, hasBadWords } from "../build/structure/mineflayer/utils/profanityFilter.js";
+import {
+  addWordWhitelist,
+  censorBadWords,
+  hasBadWords,
+  removeWordWhitelist,
+} from "../build/structure/mineflayer/utils/profanityFilter.js";
 
 test("censors listed bad words", () => {
   const input = "hello fuck world";
@@ -142,4 +147,19 @@ test("censors Cherokee letter bypasses", () => {
   assert.equal(hasBadWords("ꭰⓘⓒⓚ"), true);
   const censored = censorBadWords("Ꭰick");
   assert.ok(censored.includes("*"));
+});
+
+test("whitelisted words override censoring", async () => {
+  await addWordWhitelist("fuck");
+
+  try {
+    assert.equal(censorBadWords("fuck"), "fuck");
+    assert.equal(hasBadWords("fuck"), false);
+  } finally {
+    await removeWordWhitelist("fuck");
+  }
+});
+
+test("replaces non-standard special characters with boxes", () => {
+  assert.equal(censorBadWords("hello § Ω ™ world!"), "hello □ □ □ world!");
 });

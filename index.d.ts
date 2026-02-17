@@ -79,6 +79,8 @@ type Config = {
     whitelisted_commands: string[]
 
     useLegacyChat: boolean
+    useCustomChatFormatParser: boolean
+    customChatFormats: string[]
 
     useCommands: boolean;
     commands: Record<string, boolean>;

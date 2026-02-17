@@ -4,6 +4,8 @@ import { fileURLToPath } from "url";
 
 const BAD_WORDS_FILE_URL = new URL("../../../../json/bad_words.json", import.meta.url);
 const BAD_WORDS_FILE_PATH = fileURLToPath(BAD_WORDS_FILE_URL);
+const WORD_WHITELIST_FILE_URL = new URL("../../../../json/word_whitelist.json", import.meta.url);
+const WORD_WHITELIST_FILE_PATH = fileURLToPath(WORD_WHITELIST_FILE_URL);
 
 const EXPLICIT_SHORT_BAD_WORDS = new Set([
     "fk",
@@ -52,6 +54,7 @@ const SEVERE_FIRST_CHARS = new Set(SEVERE_BASE_WORDS.map((word) => word[0]));
 
 const CENSOR_CACHE_LIMIT = 2048;
 const censorCache = new Map<string, string>();
+const SPECIAL_CHAR_BOX = "□";
 
 const LEET_CHAR_MAP: Record<string, string> = {
     "0": "o",
@@ -218,6 +221,8 @@ const UNICODE_CONFUSABLES: Record<string, string> = {
 let normalizedBadWords: string[] = [];
 let BAD_WORD_SET = new Set<string>();
 let BAD_WORD_FIRST_CHARS = new Set<string>();
+let normalizedWordWhitelist: string[] = [];
+let WORD_WHITELIST_SET = new Set<string>();
 const SEVERE_SUBSTRING_ROOTS = [...new Set([
     "nigger",
     "nigga",
@@ -237,8 +242,16 @@ function normalizeWordForStorage(word: string): string {
     return String(word ?? "").trim().toLowerCase();
 }
 
+function normalizeWordForMatch(word: string): string {
+    return normalizeObfuscatedSegment(normalizeWordForStorage(word));
+}
+
 function persistBadWordsFile(words: string[]): Promise<void> {
     return writeFile(BAD_WORDS_FILE_URL, JSON.stringify({ words }, null, 2));
+}
+
+function persistWordWhitelistFile(words: string[]): Promise<void> {
+    return writeFile(WORD_WHITELIST_FILE_URL, JSON.stringify({ words }, null, 2));
 }
 
 function rebuildLookup(words: string[]): void {
@@ -250,6 +263,16 @@ function rebuildLookup(words: string[]): void {
 
     BAD_WORD_SET = new Set(normalizedBadWords);
     BAD_WORD_FIRST_CHARS = new Set(normalizedBadWords.map((word) => word[0]));
+    censorCache.clear();
+}
+
+function rebuildWordWhitelistLookup(words: string[]): void {
+    normalizedWordWhitelist = [...new Set(
+        words
+            .map(normalizeWordForMatch)
+            .filter((word) => word.length > 0)
+    )];
+    WORD_WHITELIST_SET = new Set(normalizedWordWhitelist);
     censorCache.clear();
 }
 
@@ -283,7 +306,34 @@ function loadBadWordsFromDisk(): void {
     }
 }
 
+function loadWordWhitelistFromDisk(): void {
+    try {
+        const raw = readFileSync(WORD_WHITELIST_FILE_URL, "utf8");
+        const parsed = JSON.parse(raw) as { words?: unknown } | unknown;
+
+        if (!parsed || typeof parsed !== "object" || !("words" in parsed)) {
+            warnFilterConfig(`"${WORD_WHITELIST_FILE_PATH}" is missing the "words" field. Starting with an empty whitelist.`);
+            rebuildWordWhitelistLookup([]);
+            return;
+        }
+
+        const words = Array.isArray(parsed.words) ? parsed.words.filter((w): w is string => typeof w === "string") : [];
+        if (!Array.isArray(parsed.words)) {
+            warnFilterConfig(`"${WORD_WHITELIST_FILE_PATH}" has invalid "words" format. Starting with an empty whitelist.`);
+            rebuildWordWhitelistLookup([]);
+            return;
+        }
+
+        rebuildWordWhitelistLookup(words);
+    } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        warnFilterConfig(`failed to load "${WORD_WHITELIST_FILE_PATH}" (${reason}). Starting with an empty whitelist.`);
+        rebuildWordWhitelistLookup([]);
+    }
+}
+
 loadBadWordsFromDisk();
+loadWordWhitelistFromDisk();
 
 function maskWord(word: string): string {
     if (word.length <= 1) return word;
@@ -339,6 +389,7 @@ function isWordLikeCharacter(char: string): boolean {
 
 function isBadWordToken(lowerToken: string): boolean {
     if (lowerToken.length === 0) return false;
+    if (WORD_WHITELIST_SET.has(lowerToken)) return false;
     if (AMBIGUOUS_TOKENS.has(lowerToken)) return false;
     if (lowerToken.length <= 2 && !EXPLICIT_SHORT_BAD_WORDS.has(lowerToken)) return false;
     if (!BAD_WORD_FIRST_CHARS.has(lowerToken[0])) return false;
@@ -458,6 +509,7 @@ function hasConcatenatedBadWords(normalized: string): boolean {
 
 function segmentHasBadWord(segment: string): boolean {
     const normalized = normalizeObfuscatedSegment(segment);
+    if (WORD_WHITELIST_SET.has(normalized)) return false;
     if (isBadWordToken(normalized) || isLikelySevereVariant(normalized)) return true;
 
     // Check for multiple concatenated bad words (e.g., "fuckyoubitch")
@@ -476,6 +528,7 @@ function segmentHasBadWord(segment: string): boolean {
 
     const normalizedCandidate = normalizeObfuscatedSegment(usernameCandidate);
     if (normalizedCandidate.length < 4) return false;
+    if (WORD_WHITELIST_SET.has(normalizedCandidate)) return false;
 
     for (const severe of SEVERE_SUBSTRING_ROOTS) {
         if (normalizedCandidate.includes(severe)) return true;
@@ -525,10 +578,15 @@ function findCensorSpans(text: string): Array<{ start: number; end: number }> {
     const maxJoinSegments = 4;
     let i = 0;
     while (i < segments.length) {
+        if (WORD_WHITELIST_SET.has(segments[i].normalized)) {
+            i += 1;
+            continue;
+        }
+
         let bestMatchEndIndex = -1;
 
         let combined = segments[i].normalized;
-        if (isBadWordToken(combined) || segmentHasBadWord(segments[i].raw)) {
+        if ((!WORD_WHITELIST_SET.has(combined) && isBadWordToken(combined)) || segmentHasBadWord(segments[i].raw)) {
             bestMatchEndIndex = i;
         }
 
@@ -537,6 +595,7 @@ function findCensorSpans(text: string): Array<{ start: number; end: number }> {
             for (let j = i + 1; j < segments.length && j < i + maxJoinSegments; j += 1) {
                 combined += segments[j].normalized;
                 if (combined.length > 48) break;
+                if (WORD_WHITELIST_SET.has(combined)) continue;
                 if (isBadWordToken(combined)) bestMatchEndIndex = j;
             }
         }
@@ -572,8 +631,25 @@ function writeToCache(input: string, output: string): void {
     censorCache.set(input, output);
 }
 
+function isAllowedOutputChar(char: string): boolean {
+    return /[A-Za-z0-9\s.,!?'"`:;()[\]{}\-_/\\@#%&*+=<>]/.test(char);
+}
+
+function replaceSpecialCharsWithBoxes(text: string): string {
+    if (!text) return text;
+    let out = "";
+    for (const char of text) {
+        out += isAllowedOutputChar(char) ? char : SPECIAL_CHAR_BOX;
+    }
+    return out;
+}
+
 export function getBadWords(): string[] {
     return [...normalizedBadWords];
+}
+
+export function getWordWhitelist(): string[] {
+    return [...normalizedWordWhitelist];
 }
 
 export async function addBadWord(word: string): Promise<boolean> {
@@ -598,6 +674,28 @@ export async function removeBadWord(word: string): Promise<boolean> {
     return true;
 }
 
+export async function addWordWhitelist(word: string): Promise<boolean> {
+    const normalized = normalizeWordForMatch(word);
+    if (!normalized) return false;
+    if (WORD_WHITELIST_SET.has(normalized)) return false;
+
+    const next = [...normalizedWordWhitelist, normalized];
+    rebuildWordWhitelistLookup(next);
+    await persistWordWhitelistFile(normalizedWordWhitelist);
+    return true;
+}
+
+export async function removeWordWhitelist(word: string): Promise<boolean> {
+    const normalized = normalizeWordForMatch(word);
+    if (!normalized) return false;
+    if (!WORD_WHITELIST_SET.has(normalized)) return false;
+
+    const next = normalizedWordWhitelist.filter((entry) => entry !== normalized);
+    rebuildWordWhitelistLookup(next);
+    await persistWordWhitelistFile(normalizedWordWhitelist);
+    return true;
+}
+
 export function censorBadWords(text: string): string {
     if (typeof text !== "string" || text.length === 0) return text;
 
@@ -606,8 +704,9 @@ export function censorBadWords(text: string): string {
 
     const spans = findCensorSpans(text);
     if (spans.length === 0) {
-        writeToCache(text, text);
-        return text;
+        const sanitized = replaceSpecialCharsWithBoxes(text);
+        writeToCache(text, sanitized);
+        return sanitized;
     }
 
     const chars = text.split("");
@@ -624,8 +723,9 @@ export function censorBadWords(text: string): string {
     }
 
     const censored = chars.join("");
-    writeToCache(text, censored);
-    return censored;
+    const sanitized = replaceSpecialCharsWithBoxes(censored);
+    writeToCache(text, sanitized);
+    return sanitized;
 }
 
 export function hasBadWords(text: string): boolean {
