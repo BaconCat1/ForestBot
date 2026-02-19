@@ -2,7 +2,7 @@
     "mc_server": "newtest_new",
     "host": "localhost",
     "port": 25565,
-    "version": "1.20.4",
+    "version": "1.21.11",
     "api_url": "http://localhost:8001",
     "websocket_url": "ws://localhost:8001",
     "useLogger": true,
