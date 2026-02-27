@@ -149,6 +149,10 @@ export default {
                 const mounted = await tryMount(entity);
                 if (mounted) {
                     const name = normalizeName(entity.name ?? "entity");
+
+	            const { x, y, z } = entity.position;
+	            console.log(`Mounted ${name} at: ${x}, ${y}, ${z}`);
+
                     bot.bot.whisper(user, `Mounted ${name}!`);
                     return;
                 }
