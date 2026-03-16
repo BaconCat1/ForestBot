@@ -6,6 +6,7 @@ import { parseChatDividerMessage } from '../../structure/mineflayer/utils/chatDi
 import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/stripMinecraftFormatting.js';
 import { isSelfStandingCommand } from '../../structure/mineflayer/utils/isStandingCommand.js';
 import { parseConfiguredChatFormatMessage } from '../../structure/mineflayer/utils/chatFormatParser.js';
+import { resolvePlayerUsernameFromSenderUuid } from '../../structure/mineflayer/utils/chatSenderResolver.js';
 
 const ignoreContains = [
     "joined the game",
@@ -122,6 +123,8 @@ export default {
         if (config.useLegacyChat) return;
 
         const rawMsg = args[0].toString();
+        const position = typeof args[1] === "string" ? args[1] : "";
+        const senderUuid = typeof args[2] === "string" ? args[2] : null;
         let fullMsg = stripMinecraftFormatting(rawMsg);
         let words = fullMsg.split(" ");
         words = splitRightCarrotInFirstWord(words);
@@ -148,6 +151,31 @@ export default {
         for (const [realName, playerObj] of Object.entries(Bot.bot.players)) {
             const displayName = (playerObj as any).displayName?.toString() ?? realName;
             currentOnlinePlayers.set(realName, displayName);
+        }
+
+        if (position === "chat" && senderUuid) {
+            const player = resolvePlayerUsernameFromSenderUuid(Bot.bot, senderUuid);
+            const message = fullMsg.trim();
+            if (!player || !message) return;
+
+            const blacklistedTryingStanding = message.startsWith(config.prefix) && isSelfStandingCommand(message);
+            if (Bot.userBlacklist.has(senderUuid) && !blacklistedTryingStanding) return;
+
+            if (message.startsWith(config.prefix)) {
+                await mcCommandHandler(player, message, Bot, senderUuid);
+                return;
+            }
+
+            await api.websocket.sendMinecraftChatMessage({
+                name: player,
+                message,
+                date: Date.now().toString(),
+                mc_server: Bot.mc_server,
+                uuid: senderUuid,
+            });
+
+            Logger.chat(player, message, senderUuid);
+            return;
         }
 
         if (
