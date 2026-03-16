@@ -7,6 +7,7 @@ import { stripMinecraftFormatting } from '../../structure/mineflayer/utils/strip
 import { isSelfStandingCommand } from '../../structure/mineflayer/utils/isStandingCommand.js';
 import { parseConfiguredChatFormatMessage } from '../../structure/mineflayer/utils/chatFormatParser.js';
 import { resolvePlayerUsernameFromSenderUuid } from '../../structure/mineflayer/utils/chatSenderResolver.js';
+import { parseWhisperMessage } from '../../structure/mineflayer/utils/whisperParser.js';
 
 const ignoreContains = [
     "joined the game",
@@ -30,8 +31,6 @@ const ignoreStartsWith = [
 ];
 
 const dividerPattern = /^(.*?)\s*(?:\u00bb|>>|>)\s*(.+)$/;
-const pmPattern = /\[PM\]\s+(.+?)\s+\u2192\s+(.+?)\s+\u00bb\s+(.+)$/;
-
 function splitRightCarrotInFirstWord(words: string[]): string[] {
     if (words.length === 0) return words;
     let first = words[0];
@@ -130,19 +129,17 @@ export default {
         words = splitRightCarrotInFirstWord(words);
         fullMsg = words.join(" ");
 
-        const pmMatch = fullMsg.match(pmPattern);
-        if (pmMatch) {
-            const sender = pmMatch[1].trim();
-            const recipient = pmMatch[2].trim();
-            const pmMessage = pmMatch[3].trim();
-            const isForBot = recipient.toLowerCase() === Bot.bot.username.toLowerCase();
+        const parsedWhisper = parseWhisperMessage(fullMsg, Bot.bot.username);
+        if (parsedWhisper) {
+            const isForBot = parsedWhisper.recipient === null
+                || parsedWhisper.recipient.toLowerCase() === Bot.bot.username.toLowerCase();
 
-            if (!isForBot || !pmMessage.startsWith(config.prefix)) return;
+            if (!isForBot || !parsedWhisper.message.startsWith(config.prefix)) return;
 
-            const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
-            if (Bot.userBlacklist.has(uuid) && !isSelfStandingCommand(pmMessage)) return;
+            const uuid = Bot.bot.players[parsedWhisper.sender]?.uuid ?? await api.convertUsernameToUuid(parsedWhisper.sender);
+            if (Bot.userBlacklist.has(uuid) && !isSelfStandingCommand(parsedWhisper.message)) return;
 
-            await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
+            await mcCommandHandler(parsedWhisper.sender, parsedWhisper.message, Bot, uuid, true);
             return;
         }
 

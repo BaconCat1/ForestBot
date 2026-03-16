@@ -6,6 +6,7 @@ import parseUsername from "../../structure/mineflayer/utils/parseUsername.js";
 import { stripMinecraftFormatting } from "../../structure/mineflayer/utils/stripMinecraftFormatting.js";
 import { isSelfStandingCommand } from "../../structure/mineflayer/utils/isStandingCommand.js";
 import { parseConfiguredChatFormatMessage } from "../../structure/mineflayer/utils/chatFormatParser.js";
+import { parseWhisperMessage } from "../../structure/mineflayer/utils/whisperParser.js";
 
 const log = Logger;
 
@@ -14,8 +15,6 @@ const blacklistedWords = [
   "tempbanned", "temp-banned", "[+]", "From", "left", "Left", "joined",
   "whispers", "[EUPVP]", "[Duels]", "voted", "has requested to teleport to you.", "[Rcon]"
 ];
-const pmPattern = /\[PM\]\s+(.+?)\s+\u2192\s+(.+?)\s+\u00bb\s+(.+)$/;
-
 export default {
   name: "messagestr",
   once: false,
@@ -27,16 +26,14 @@ export default {
     // console.log(chatArgs, " chatArgs args")w
 
     try {
-      const pmMatch = rawMessage.match(pmPattern);
-      if (pmMatch) {
-        const sender = pmMatch[1].trim();
-        const recipient = pmMatch[2].trim();
-        const pmMessage = pmMatch[3].trim();
-        const isForBot = recipient.toLowerCase() === Bot.bot.username.toLowerCase();
-        if (isForBot && pmMessage.startsWith(config.prefix)) {
-          const uuid = Bot.bot.players[sender]?.uuid ?? await api.convertUsernameToUuid(sender);
-          if (!Bot.userBlacklist.has(uuid) || isSelfStandingCommand(pmMessage)) {
-            await mcCommandHandler(sender, pmMessage, Bot, uuid, true);
+      const parsedWhisper = parseWhisperMessage(rawMessage, Bot.bot.username);
+      if (parsedWhisper) {
+        const isForBot = parsedWhisper.recipient === null
+          || parsedWhisper.recipient.toLowerCase() === Bot.bot.username.toLowerCase();
+        if (isForBot && parsedWhisper.message.startsWith(config.prefix)) {
+          const uuid = Bot.bot.players[parsedWhisper.sender]?.uuid ?? await api.convertUsernameToUuid(parsedWhisper.sender);
+          if (!Bot.userBlacklist.has(uuid) || isSelfStandingCommand(parsedWhisper.message)) {
+            await mcCommandHandler(parsedWhisper.sender, parsedWhisper.message, Bot, uuid, true);
           }
         }
         return;
