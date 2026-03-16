@@ -14,6 +14,9 @@ export default {
 
         if (bed) {
             try {
+		const { x, y, z } = bed.position;
+		console.log(`Sleeping at: ${x}, ${y}, ${z}`);
+
                 await bot.bot.activateBlock(bed);
                 bot.Whisper(user, " goodnight zzz")
             } catch (err) {
