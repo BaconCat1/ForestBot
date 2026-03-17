@@ -49,7 +49,7 @@ class MineflayerOptions implements BotOptions {
   viewDistance = 0
   closeTimeout = 60000
 
-  disableChatSigning = false
+  disableChatSigning = true
   checkTimeoutInterval = 60000
  
 }
