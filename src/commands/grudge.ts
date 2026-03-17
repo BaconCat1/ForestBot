@@ -18,12 +18,12 @@ function extractVictimName(entry: any): string | null {
 
 export default {
     commands: ['grudge'],
-    description: ` Shows how many times a player has killed a specific victim. Usage: ${config.prefix}grudge <victim> [killer]`,
+    description: ` Shows how many times a player has killed a specific victim. Usage: ${config.prefix}grudge [killer] <victim>`,
     minArgs: 1,
     maxArgs: 2,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
-        const victim = args[0] as string;
-        const killer = args[1] ? args[1] as string : user;
+        const killer = args[1] ? args[0] as string : user;
+        const victim = args[1] ? args[1] as string : args[0] as string;
 
         const uuid = await api.convertUsernameToUuid(killer);
         const data = await api.getKills(uuid, config.mc_server, 10000, 'DESC');

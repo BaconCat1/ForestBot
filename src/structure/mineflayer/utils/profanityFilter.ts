@@ -633,7 +633,7 @@ function writeToCache(input: string, output: string): void {
 }
 
 function isAllowedOutputChar(char: string): boolean {
-    return /[A-Za-z0-9\s.,!?'"`:;()[\]{}\-_/\\@#%&*+=<>]/.test(char);
+    return /[A-Za-z0-9\s.,!?'"`:;()[\]{}\-_/\\@#%&*+=<>|]/.test(char);
 }
 
 function replaceSpecialCharsWithBoxes(text: string): string {

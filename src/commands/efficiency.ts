@@ -13,17 +13,19 @@ function toEpochMs(value: string | number): number {
 
 export default {
     commands: ['efficiency', 'eff'],
-    description: ` Shows rate-based efficiency stats. Usage: ${config.prefix}efficiency <kills|deaths|messages> [username]`,
+    description: ` Shows rate-based efficiency stats. Usage: ${config.prefix}efficiency [username] <kills|deaths|messages>`,
     minArgs: 1,
     maxArgs: 2,
     execute: async (user, args, bot: Bot, api: ForestBotAPI) => {
-        const stat = (args[0] as string).toLowerCase() as EffStat;
+        const search = args[1] ? args[0] as string : user;
+        const statArg = args[1] ? args[1] : args[0];
+        const stat = (statArg as string).toLowerCase() as EffStat;
+
         if (!VALID_STATS.includes(stat)) {
-            bot.Whisper(user, ` Valid stats: kills, deaths, messages. Usage: ${config.prefix}efficiency <stat> [username]`);
+            bot.Whisper(user, ` Valid stats: kills, deaths, messages. Usage: ${config.prefix}efficiency [username] <stat>`);
             return;
         }
 
-        const search = args[1] ? args[1] as string : user;
         const uuid = await api.convertUsernameToUuid(search);
 
         if (stat === 'kills' || stat === 'deaths') {
