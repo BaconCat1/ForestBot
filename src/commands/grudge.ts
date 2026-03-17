@@ -41,7 +41,7 @@ export default {
 
         if (count === 0) {
             bot.bot.chat(` ${killer} has never killed ${victim}.`);
-        }else if { (count >= 30) {
+        } else if (count >= 30) {
             bot.bot.chat(` ${killer} has killed ${victim} ${count} times. That's a grudge!`);
         } else {
             bot.bot.chat(` ${killer} has killed ${victim} ${count} time${count === 1 ? '' : 's'}.`);
