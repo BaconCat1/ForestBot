@@ -163,3 +163,7 @@ test("whitelisted words override censoring", async () => {
 test("replaces non-standard special characters with boxes", () => {
   assert.equal(censorBadWords("hello § Ω ™ world!"), "hello □ □ □ world!");
 });
+
+test("preserves allowed robot emoji output", () => {
+  assert.equal(censorBadWords("hello 🤖"), "hello 🤖");
+});

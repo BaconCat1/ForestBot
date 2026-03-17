@@ -55,6 +55,9 @@ const SEVERE_FIRST_CHARS = new Set(SEVERE_BASE_WORDS.map((word) => word[0]));
 const CENSOR_CACHE_LIMIT = 2048;
 const censorCache = new Map<string, string>();
 const SPECIAL_CHAR_BOX = "□";
+const ALLOWED_SPECIAL_OUTPUT_CHARS = new Set([
+    "🤖",
+]);
 
 const LEET_CHAR_MAP: Record<string, string> = {
     "0": "o",
@@ -633,7 +636,7 @@ function writeToCache(input: string, output: string): void {
 }
 
 function isAllowedOutputChar(char: string): boolean {
-    return /[A-Za-z0-9\s.,!?'"`:;()[\]{}\-_/\\@#%&*+=<>|]/.test(char);
+    return ALLOWED_SPECIAL_OUTPUT_CHARS.has(char) || /[A-Za-z0-9\s.,!?'"`:;()[\]{}\-_/\\@#%&*+=<>|]/.test(char);
 }
 
 function replaceSpecialCharsWithBoxes(text: string): string {
