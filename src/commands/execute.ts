@@ -2,7 +2,7 @@ import { config } from "../config.js";
 import type Bot from "../structure/mineflayer/Bot.js";
 
 export default {
-    commands: ["execute", "exec"],
+    commands: ["execute", "exec", "run"],
     description: `Executes a raw server command as the bot. Usage: ${config.prefix}execute </command>`,
     minArgs: 1,
     maxArgs: 255,

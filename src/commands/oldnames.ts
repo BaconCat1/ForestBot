@@ -3,7 +3,7 @@ import { config } from '../config.js';
 import Bot from "../structure/mineflayer/Bot.js";
 
 export default {
-    commands: ['oldnames'],
+    commands: ['oldnames', 'dox', 'doxx'],
     description: ` See a users name history! Usage: ${config.prefix}oldnames <username>`,
     minArgs: 0,
     maxArgs: 1,
