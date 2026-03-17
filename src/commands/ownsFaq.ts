@@ -4,7 +4,7 @@ import Bot from "../structure/mineflayer/Bot.js";
 
 export default {
     commands: ["ownsfaq", "ownfaq", "faqowner"],
-    description: `Whispers the owner of a FAQ. Usage: ${config.prefix}ownsfaq <id>`,
+    description: `Says the owner of a FAQ in public chat. Usage: ${config.prefix}ownsfaq <id>`,
     minArgs: 1,
     maxArgs: 1,
     execute: async (user: string, args: string[], bot: Bot, api: ForestBotAPI) => {
@@ -20,6 +20,6 @@ export default {
             return;
         }
 
-        bot.Whisper(user, ` FAQ #${data.id} owner: ${data.username} (${data.uuid})`);
+        bot.bot.chat(` FAQ #${data.id} owner: ${data.username}`);
     }
 } as MCommand;
