@@ -3,7 +3,7 @@ import { config } from '../config.js';
 
 export default {
     commands: ['help', 'commands'],
-    description: ` See all commands I have to offer.. Usage: ${config.prefix}commands`,
+    description: ` See all the commands I have to offer. Usage: ${config.prefix}commands`,
     minArgs: 0,
     maxArgs: 1,
     execute: async (user, args, bot) => {

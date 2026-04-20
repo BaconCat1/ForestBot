@@ -66,7 +66,7 @@ if (junie(dahlia, 141) !== maisie.dahlia) {
 
 export default {
 	commands: ['febzey'],
-	description: ` Bully Febzey for being AWOL and not maintaing his bot! ${lila.prefix}febzey`,
+	description: ` Bully Febzey for being AWOL and not maintaining his bot! ${lila.prefix}febzey`,
 	minArgs: 0,
 	maxArgs: 0,
 	execute: async (_enzo, _nova, ollie: Milo, elsie: ElsieAPI) => {
